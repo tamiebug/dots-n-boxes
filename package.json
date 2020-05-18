@@ -1,0 +1,38 @@
+{
+  "name": "dots-n-boxes",
+  "version": "1.0.0",
+  "description": "Simple app recreation of the children's paper-and-pencil game of the same name.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --content-base public/ --progress --colors",
+    "build": "webpack --mode development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PentaHiggs/dots-n-boxes.git"
+  },
+  "author": "Andy Perez",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PentaHiggs/dots-n-boxes/issues"
+  },
+  "homepage": "https://github.com/PentaHiggs/dots-n-boxes#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.1.0",
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.2",
+    "css-loader": "^1.0.0",
+    "style-loader": "^0.23.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "react-hot-loader": "^4.3.11"
+  }
+}
