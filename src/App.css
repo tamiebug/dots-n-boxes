@@ -2,3 +2,53 @@
 	margin: 1rem;
 	font-family: Arial, Helvetica, sans-serif;
 }
+
+.dot {
+  background: blue;
+  border-radius: 50%;
+  width: 1em;
+  height: 1em;
+}
+
+.horizLine, .vertLine {
+  background: red;
+  z-index: -5;
+  position: absolute;
+  top: .25em;
+  left: .25em;
+}
+
+.horizLine {
+  height: .5em;
+  width: 6em;
+}
+
+.vertLine {
+  height: 6em;
+  width: .5em;
+  left: .25em;
+}
+
+.gameBoard {
+  display: table;
+}
+ 
+.gameBoardRow {
+  display: table-row;
+}
+
+.gameBoardSquare {
+  display: table-cell;
+  position: relative;
+  height: 6em;
+  width: 6em;
+  /*border: dotted;*/
+}
+
+.bottomBorder {
+  height: 1em;
+}
+
+.rightBorder {
+  width: 1em;
+}
