@@ -10,6 +10,28 @@
   height: 1em;
 }
 
+.selectedCoordCircle {
+  border-radius: 40%;
+  width: 4em;
+  height: 4em;
+  border: solid;
+  border-color: lightblue;
+  border-style: dotted;
+  z-index: 7;
+  position: absolute;
+  left: -1.75em;
+  top: -1.75em;
+}
+
+.greyedHorizLine, .greyedVertLine {
+  background: grey;
+  opacity: 0.5;
+  z-index: -6;
+  position: absolute;
+  top: .25em;
+  left: .25em;
+}
+
 .horizLine, .vertLine {
   background: red;
   z-index: -5;
@@ -18,15 +40,14 @@
   left: .25em;
 }
 
-.horizLine {
+.horizLine, .greyedHorizLine {
   height: .5em;
   width: 6em;
 }
 
-.vertLine {
+.vertLine, .greyedVertLine {
   height: 6em;
   width: .5em;
-  left: .25em;
 }
 
 .gameBoard {
@@ -42,7 +63,6 @@
   position: relative;
   height: 6em;
   width: 6em;
-  /*border: dotted;*/
 }
 
 .bottomBorder {
