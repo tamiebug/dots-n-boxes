@@ -29,24 +29,24 @@ class GameBoardSquare extends Component {
 		if (this.props.row == (this.props.boardHeight - 1)) {
 			className += " bottomBorder";	
 		}
-		const row = this.props.row;
-		const column = this.props.column;
+
 		let squareChildren = [
-				<SelectionCircle key={3}
-					handleMouseEvent={(event) => this.props.handleMouseEvent(event, row, column)}
+			<SelectionCircle key={3}
+				handleMouseEvent={(event) => this.props.handleMouseEvent(
+				event, this.props.row, this.props.column)}
 			/>,
-			<div key={0} className="dot"/ >
+			<div key={0} className="dot" />
 		];
 
-		/*TODO: Find more elegant way of doing this... possibly default invisible but made visible? */
-		if (this.props.square["horizLine"]) { 
-			squareChildren.push(<div key={4} className="horizLine" />)}
-		if (this.props.square["vertLine"]){
-			squareChildren.push(<div key={5} className="vertLine" />)}
-		if (this.props.square["greyedHorizLine"]) {
-			squareChildren.push(<div key={6} className="greyedHorizLine" />)}
-		if (this.props.square["greyedVertLine"]) {
-			squareChildren.push(<div key={7} className="greyedVertLine" />)}
+		const lineClasses = ["horizLine", "vertLine", "greyedHorizLine", "greyedVertLine"];
+		let counter = 4;
+		for (let [lineClass, renderValue] of Object.entries(this.props.square)) {
+			if (renderValue && lineClasses.includes(lineClass)) {
+				squareChildren.push(<div key={counter} className={lineClass} />);
+				counter++;
+			}
+		}
+
 		if ("takenBy" in this.props.square) {
 			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.square.takenBy} </div>);}
 
