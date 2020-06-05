@@ -107,29 +107,22 @@ class GameBoard extends Component {
 					break;
 			}
 		} else {
-			/*TODO: Refactor functions to use already-calculated variables here?
-			 * Lots of duplicated work between this section and this.makeMove */
 			const selRow = this.state.selectedCoord.row;
 			const selColumn = this.state.selectedCoord.column;
 
 			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
-			const lineOrientation = (selRow - row) == 0 ? "horizLine" : "vertLine";
-
-			const topLeft = {"row": Math.min(selRow, row), "column": Math.min(selColumn, column)};
-			const currSquare = {...this.state.squares[topLeft.row][topLeft.column]};
-
 			switch(event) {
 				case mEvents.DOWN:
 					break;
 				case mEvents.UP:
-					if (isAdjacent && !(lineOrientation in currSquare)) {
+					if (isAdjacent) {
 						this.makeMove(row, column);
 					}
 					this.setState({selectedCoord : null});
 					break;
 				case mEvents.ENTER:
 					this.highlightDot(row, column);
-					if (isAdjacent && !(lineOrientation in currSquare)) {
+					if (isAdjacent) {
 						this.highlightPossibleMove(row, column);
 					}
 					break;
@@ -168,11 +161,18 @@ class GameBoard extends Component {
 		};
 		const isHorizontal = isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column});
 		const newSquareVals = {};
+		
+		// makeMove triggers several functions, doesn't just modify display.  Thus, we
+		// must check whether this truly is a new move before calling numberBoxesMadeByMove
+		const currentSquare = this.state.squares[moveCoords.row][moveCoords.column];
 		if (isHorizontal) {
+			if (currentSquare["horizline"]) return;
 			newSquareVals["horizLine"] = true;
 		} else {
+			if (currentSquare["vertLine"]) return;
 			newSquareVals["vertLine"] = true;
 		}
+
 		const numberBoxes = this.numberBoxesMadeByMove(moveCoords.row, moveCoords.column, isHorizontal);
 		this.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);	
 		this.props.onGameMove(numberBoxes);
