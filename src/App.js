@@ -9,6 +9,8 @@ const mEvents = Object.freeze({
 	LEAVE:	Symbol("leave")
 });
 
+const MAX_BOARD_SIZE = 30;
+
 class SelectionCircle extends Component {
 	render() {return (
 		<div className="selectedCoordCircle"
@@ -89,8 +91,6 @@ class GameBoard extends Component {
 	}
 
 	handleMouseEvent(event, row, column){
-		/*TODO: Make mouseUp events outside of selectedCoordCircle(s) reset selectedCoord
-		 *TODO: Make mouseDown events outside of them do the same */
 		if (this.state.selectedCoord == null) {
 			switch(event) {
 				case mEvents.DOWN:
@@ -113,6 +113,8 @@ class GameBoard extends Component {
 			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
 			switch(event) {
 				case mEvents.DOWN:
+					// We should actually never arrive here, because mEvents.UP happens first
+					// and sets self.state.selectedCoord to null
 					break;
 				case mEvents.UP:
 					if (isAdjacent) {
@@ -298,10 +300,17 @@ class Game extends Component {
 	}
 
 	componentDidMount() {
-		//TODO: Validate inputs, at least.
 		const playerName1 = prompt("Player 1, please enter your name");
 		const playerName2 = prompt("Player 2, please enter your name");
-		const boardSize = parseInt(prompt("What size board would you like?"), 10);
+		let boardSize;
+		while(true) {	
+			boardSize = parseInt(prompt("What size board would you like?"), 10);
+			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
+				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
+			} else {
+				break;
+			}
+		}
 		this.setState({
 			playerName1: playerName1,
 			playerName2: playerName2,
@@ -351,7 +360,15 @@ class Game extends Component {
 			alert(this.state.playerName2 + " is the winner");
 		}
 		if (confirm("Would you like to play again?")) {
-			const boardSize = parseInt(prompt("What board size would you like?"), 10);
+			let boardSize;	
+			while(true) {	
+				boardSize = parseInt(prompt("What size board would you like?"), 10);
+				if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
+					alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
+				} else {
+					break;
+				}
+			}
 			this.setState({boardWidth: boardSize, boardHeight: boardSize});
 		}
 	}
