@@ -141,6 +141,7 @@ class GameBoard extends Component {
 	}
 
 	render() {
+		const boardSize = Math.min(this.props.boardWidth, this.props.boardHeight);
 		const renderedRows = this.state.squares.map((squareRow, index) => {
 			return (<GameBoardRow
 				key={index}
@@ -151,9 +152,9 @@ class GameBoard extends Component {
 				handleMouseEvent={this.handleMouseEvent.bind(this)}
 			/>)});
 		return (
-			<div className="gameBoard">
-			{renderedRows}
-		</div>
+			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}> 
+				{renderedRows}
+			</div>
 	)}
 
 	makeMove(row, column){
@@ -430,6 +431,17 @@ function isHorizontalLine(firstCoord, secondCoord){
 	} else {
 		return false;
 	}
+}
+
+function determineScalingFactor(boardSize) {
+	const fractionOfScreenTaken = .8;
+	const maxPxScaleFactor = 32;
+
+	const numPxInViewport = (Math.min(
+		document.documentElement.clientWidth, document.documentElement.clientHeight));
+	const boardSizeInPx = 6 * (boardSize - 1) + 1;
+	const pxScaleFactor = numPxInViewport * fractionOfScreenTaken / boardSizeInPx;
+	return Math.min(pxScaleFactor, maxPxScaleFactor);
 }
 
 export default hot(module)(App);
