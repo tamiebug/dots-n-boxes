@@ -3,6 +3,10 @@
 	font-family: Arial, Helvetica, sans-serif;
 }
 
+.gameBoard {
+  font-size: 16px;
+}
+
 .boxLabel {
   position: absolute;
   z-index: 8;
@@ -16,19 +20,18 @@
   border-radius: 50%;
   width: 1em;
   height: 1em;
+  position: absolute;
 }
 
 .selectedCoordCircle {
   border-radius: 40%;
   width: 4em;
   height: 4em;
-  border: solid;
-  border-color: lightblue;
-  border-style: dotted;
-  z-index: 7;
   position: absolute;
-  left: -1.75em;
-  top: -1.75em;
+  top: -1.5em;
+  left: -1.5em;
+  padding: 0px;
+  margin: 0px;
 }
 
 .greyedHorizLine, .greyedVertLine {
