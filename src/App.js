@@ -29,7 +29,7 @@ class GameBoardSquare extends Component {
 			className += " rightBorder";
 		}
 		if (this.props.row == (this.props.boardHeight - 1)) {
-			className += " bottomBorder";	
+			className += " bottomBorder";
 		}
 
 		let squareChildren = [
@@ -50,14 +50,15 @@ class GameBoardSquare extends Component {
 		}
 
 		if ("takenBy" in this.props.square) {
-			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.square.takenBy} </div>);}
+			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.square.takenBy} </div>);
+		}
 
 		return (
 			<div className={className} >
 				{squareChildren}
 			</div>
 		)
-	} 
+	}
 }
 
 class GameBoardRow extends Component {
@@ -72,12 +73,11 @@ class GameBoardRow extends Component {
 					square={square}
 					handleMouseEvent={this.props.handleMouseEvent}
 				/>)}
-			);	
+			);
 		return (
 			<div key={this.props.row} className="gameBoardRow" >
-			{renderedSquares}
-		</div>
-
+				{renderedSquares}
+			</div>
 	)}
 }
 
@@ -152,7 +152,7 @@ class GameBoard extends Component {
 				handleMouseEvent={this.handleMouseEvent.bind(this)}
 			/>)});
 		return (
-			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}> 
+			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}>
 				{renderedRows}
 			</div>
 	)}
@@ -160,11 +160,11 @@ class GameBoard extends Component {
 	makeMove(row, column){
 		const moveCoords = {
 			"row": Math.min(row, this.state.selectedCoord.row),
-			"column": Math.min(column, this.state.selectedCoord.column) 
+			"column": Math.min(column, this.state.selectedCoord.column)
 		};
 		const isHorizontal = isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column});
 		const newSquareVals = {};
-		
+
 		// makeMove triggers several functions, doesn't just modify display.  Thus, we
 		// must check whether this truly is a new move before calling numberBoxesMadeByMove
 		const currentSquare = this.state.squares[moveCoords.row][moveCoords.column];
@@ -177,7 +177,7 @@ class GameBoard extends Component {
 		}
 
 		const numberBoxes = this.numberBoxesMadeByMove(moveCoords.row, moveCoords.column, isHorizontal);
-		this.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);	
+		this.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);
 		this.props.onGameMove(numberBoxes);
 		return;
 	}
@@ -197,7 +197,7 @@ class GameBoard extends Component {
 		return;
 	}
 
-	
+
 	unHighlightPossibleMove(row, column) {
 		const possibleMoveCoords = {
 			"row": Math.min(row, this.state.selectedCoord.row),
@@ -227,7 +227,7 @@ class GameBoard extends Component {
 		let numberBoxesMade = 0;
 		if (isHorizontal) {
 			// Completes box above?
-			if (((moveRow - 1) >= 0) && 
+			if (((moveRow - 1) >= 0) &&
 					("vertLine" in this.state.squares[moveRow-1][moveColumn]) &&
 					("horizLine" in this.state.squares[moveRow-1][moveColumn]) &&
 					("vertLine" in this.state.squares[moveRow-1][moveColumn+1])) {
@@ -261,7 +261,7 @@ class GameBoard extends Component {
 			}
 		}
 		return numberBoxesMade;
-	}		
+	}
 
 	labelBox(boxRow, boxColumn) {
 		this.updateBoardSquare({takenBy: this.props.currentPlayerInitials()}, boxRow, boxColumn);
@@ -270,7 +270,7 @@ class GameBoard extends Component {
 
 	updateBoardSquare(newSquareVals, row, column) {
 		// Map through rows and columns to find desired element location to mutate
-		this.setState((state, props) => ({squares: 
+		this.setState((state, props) => ({squares:
 			state.squares.map((squareRow, j) => {
 				return squareRow.map((square, i) => {
 					if(i == column && j == row) {
@@ -278,11 +278,11 @@ class GameBoard extends Component {
 					} else {
 						return square;
 					}
-				})
+				});
 			})
 		}));
 	}
-	
+
 }
 
 class Game extends Component {
@@ -304,7 +304,7 @@ class Game extends Component {
 		const playerName1 = prompt("Player 1, please enter your name");
 		const playerName2 = prompt("Player 2, please enter your name");
 		let boardSize;
-		while(true) {	
+		while(true) {
 			boardSize = parseInt(prompt("What size board would you like?"), 10);
 			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
 				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
@@ -361,8 +361,8 @@ class Game extends Component {
 			alert(this.state.playerName2 + " is the winner");
 		}
 		if (confirm("Would you like to play again?")) {
-			let boardSize;	
-			while(true) {	
+			let boardSize;
+			while(true) {
 				boardSize = parseInt(prompt("What size board would you like?"), 10);
 				if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
 					alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
@@ -389,9 +389,9 @@ class Game extends Component {
 		// Setup is complete
 		// TODO: Should score be stored elsewhere?  Maybe state changes cause unnecessary GameBoard re-renderings?  Look into it.
 		return (
- 			<div>
+			<div>
 				<h1>{this.state.playerName1}[{this.state.score1}] vs {this.state.playerName2}[{this.state.score2}]</h1>
-					<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
+				<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
 				<GameBoard
 					boardWidth={this.state.boardWidth}
 					boardHeight={this.state.boardHeight}
@@ -403,7 +403,7 @@ class Game extends Component {
 	}
 }
 
-class App extends Component {	
+class App extends Component {
 	render(){
 		return (
 			<div className="App">
@@ -420,7 +420,7 @@ function createEmptyBoard(rows, columns) {
 	}
 	let board = [];
 	for (var j = 0; j < rows; j++) {
-		board.push(row.map(a => Object.assign({})));
+		board.push(row.map(() => Object.assign({})));
 	}
 	return board;
 }
