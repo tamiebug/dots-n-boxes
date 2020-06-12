@@ -296,7 +296,8 @@ class Game extends Component {
 			boardWidth: 0,
 			boardHeight: 0,
 			firstPlayerGoes: true,
-			setupComplete: false
+			setupComplete: false,
+			matchNumber: 0
 		};
 	}
 
@@ -370,7 +371,12 @@ class Game extends Component {
 					break;
 				}
 			}
-			this.setState({boardWidth: boardSize, boardHeight: boardSize});
+			this.setState((state) => ({
+				boardWidth: boardSize, 
+				boardHeight: boardSize, 
+				matchNumber: state.matchNumber + 1,
+				score1: 0,
+				score2: 0}));
 		}
 	}
 
@@ -393,6 +399,7 @@ class Game extends Component {
 				<h1>{this.state.playerName1}[{this.state.score1}] vs {this.state.playerName2}[{this.state.score2}]</h1>
 				<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
 				<GameBoard
+					key={this.state.matchNumber}
 					boardWidth={this.state.boardWidth}
 					boardHeight={this.state.boardHeight}
 					onGameMove={this.onGameMove.bind(this)}
