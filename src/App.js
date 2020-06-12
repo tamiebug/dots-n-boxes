@@ -49,7 +49,7 @@ class GameBoardSquare extends Component {
 			}
 		}
 
-		if ("takenBy" in this.props.square) {
+		if (this.props.square.takenBy) {
 			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.square.takenBy} </div>);
 		}
 
@@ -86,7 +86,6 @@ class GameBoard extends Component {
 		super(props);
 		this.state = {
 			selectedCoord: null,
-			squares: createEmptyBoard(this.props.boardHeight, this.props.boardWidth)
 		};
 	}
 
@@ -119,6 +118,7 @@ class GameBoard extends Component {
 				case mEvents.UP:
 					if (isAdjacent) {
 						this.makeMove(row, column);
+						this.unHighlightPossibleMove(row, column);
 					}
 					this.setState({selectedCoord : null});
 					break;
@@ -142,7 +142,7 @@ class GameBoard extends Component {
 
 	render() {
 		const boardSize = Math.min(this.props.boardWidth, this.props.boardHeight);
-		const renderedRows = this.state.squares.map((squareRow, index) => {
+		const renderedRows = this.props.squares.map((squareRow, index) => {
 			return (<GameBoardRow
 				key={index}
 				row={index}
@@ -157,7 +157,7 @@ class GameBoard extends Component {
 			</div>
 	)}
 
-	makeMove(row, column){
+	makeMove(row, column) {
 		const moveCoords = {
 			"row": Math.min(row, this.state.selectedCoord.row),
 			"column": Math.min(column, this.state.selectedCoord.column)
@@ -167,7 +167,7 @@ class GameBoard extends Component {
 
 		// makeMove triggers several functions, doesn't just modify display.  Thus, we
 		// must check whether this truly is a new move before calling numberBoxesMadeByMove
-		const currentSquare = this.state.squares[moveCoords.row][moveCoords.column];
+		const currentSquare = this.props.squares[moveCoords.row][moveCoords.column];
 		if (isHorizontal) {
 			if (currentSquare["horizline"]) return;
 			newSquareVals["horizLine"] = true;
@@ -176,8 +176,9 @@ class GameBoard extends Component {
 			newSquareVals["vertLine"] = true;
 		}
 
-		const numberBoxes = this.numberBoxesMadeByMove(moveCoords.row, moveCoords.column, isHorizontal);
-		this.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);
+		const numberBoxes = this.props.numberBoxesMadeByMove(moveCoords.row, moveCoords.column, isHorizontal);
+		this.props.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);
+		this.props.updateMoveStack(moveCoords.row, moveCoords.column, isHorizontal);
 		this.props.onGameMove(numberBoxes);
 		return;
 	}
@@ -193,7 +194,7 @@ class GameBoard extends Component {
 		} else {
 			newSquareVals["greyedVertLine"] = true;
 		}
-		this.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
+		this.props.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
 		return;
 	}
 
@@ -209,7 +210,7 @@ class GameBoard extends Component {
 		} else {
 			newSquareVals["greyedVertLine"] = false;
 		}
-		this.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
+		this.props.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
 		return;
 	}
 
@@ -222,67 +223,6 @@ class GameBoard extends Component {
 		//TODO: Implement highlightDot & unHighlightDot
 		return;
 	}
-
-	numberBoxesMadeByMove(moveRow, moveColumn, isHorizontal) {
-		let numberBoxesMade = 0;
-		if (isHorizontal) {
-			// Completes box above?
-			if (((moveRow - 1) >= 0) &&
-					("vertLine" in this.state.squares[moveRow-1][moveColumn]) &&
-					("horizLine" in this.state.squares[moveRow-1][moveColumn]) &&
-					("vertLine" in this.state.squares[moveRow-1][moveColumn+1])) {
-				numberBoxesMade++;
-				this.labelBox(moveRow-1, moveColumn);
-			}
-			// Completes box below?
-			if (((moveRow + 1) < this.props.boardHeight) &&
-					("vertLine" in this.state.squares[moveRow][moveColumn]) &&
-					("horizLine" in this.state.squares[moveRow+1][moveColumn]) &&
-					("vertLine" in this.state.squares[moveRow][moveColumn+1])) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn);
-			}
-		} else { // Is vertical
-			// Completes box to the right?
-			if (((moveColumn + 1) < this.props.boardWidth) &&
-					("horizLine" in this.state.squares[moveRow][moveColumn]) &&
-					("vertLine" in this.state.squares[moveRow][moveColumn+1]) &&
-					("horizLine" in this.state.squares[moveRow+1][moveColumn])) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn);
-			}
-			// Completes box to the left
-			if (((moveColumn - 1) >= 0) &&
-					("horizLine" in this.state.squares[moveRow][moveColumn-1]) &&
-					("vertLine" in this.state.squares[moveRow][moveColumn-1]) &&
-					("horizLine" in this.state.squares[moveRow+1][moveColumn-1])) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn-1);
-			}
-		}
-		return numberBoxesMade;
-	}
-
-	labelBox(boxRow, boxColumn) {
-		this.updateBoardSquare({takenBy: this.props.currentPlayerInitials()}, boxRow, boxColumn);
-		return;
-	}
-
-	updateBoardSquare(newSquareVals, row, column) {
-		// Map through rows and columns to find desired element location to mutate
-		this.setState((state, props) => ({squares:
-			state.squares.map((squareRow, j) => {
-				return squareRow.map((square, i) => {
-					if(i == column && j == row) {
-						return Object.assign({...square}, newSquareVals);
-					} else {
-						return square;
-					}
-				});
-			})
-		}));
-	}
-
 }
 
 class Game extends Component {
@@ -297,7 +237,9 @@ class Game extends Component {
 			boardHeight: 0,
 			firstPlayerGoes: true,
 			setupComplete: false,
-			matchNumber: 0
+			matchNumber: 0,
+			squares: [],
+			moveStack: []
 		};
 	}
 
@@ -318,6 +260,7 @@ class Game extends Component {
 			playerName2: playerName2,
 			boardWidth: boardSize,
 			boardHeight: boardSize,
+			squares: createEmptyBoard(boardSize, boardSize),
 			setupComplete: true
 		});
 		return;
@@ -336,22 +279,111 @@ class Game extends Component {
 	}
 
 	onGameMove(numberBoxesCompleted) {
-		if (numberBoxesCompleted > 0) {
-			let whichScore = null;
-			// Do this with a ?: conditional statement?
-			if (this.state.firstPlayerGoes) {
-				whichScore = "score1";
-			} else {
-				whichScore = "score2";
-			}
-			// Player goes again after completing a box
+		if (numberBoxesCompleted !== 0) {
+			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
 			this.setState((state, props) => (
 				{[whichScore]: state[whichScore] + numberBoxesCompleted}));
 		} else {
+			// player does not go again if they do not finish a box / are undoing a box
 			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
 		}
 		return;
 	}
+
+	removeLastMove() {
+		if (this.state.moveStack.length == 0) return false;
+
+		const last = this.state.moveStack[this.state.moveStack.length - 1];
+		this.setState((state, props) => ({moveStack :
+			state.moveStack.filter(
+				(_, index) => index != (state.moveStack.length - 1))}));
+		const numberBoxes = this.numberBoxesMadeByMove(last.row, last.column, last.isHorizontal);
+
+		if (last.isHorizontal) {
+			this.updateBoardSquare({"horizLine": false}, last.row, last.column);
+		} else {
+			this.updateBoardSquare({"vertLine": false}, last.row, last.column);
+
+		}
+		this.unLabelBox(last.row, last.column);
+		this.onGameMove(-1 * numberBoxes);
+		return true;
+	}
+
+	labelBox(boxRow, boxColumn) {
+		this.updateBoardSquare({takenBy: this.currentPlayerInitials()}, boxRow, boxColumn);
+		return;
+	}
+
+	unLabelBox(boxRow, boxColumn) {
+		this.updateBoardSquare({takenBy: null}, boxRow, boxColumn)
+		return;
+	}
+	updateMoveStack(row, column, isHorizontal) {
+		this.setState((state, props) => ({
+			moveStack: [...state.moveStack, {
+				row: row,
+				column: column,
+				isHorizontal: isHorizontal
+			}]
+		}));
+	}
+
+	updateBoardSquare(newSquareVals, row, column) {
+		// Map through rows and columns to find desired element location to mutate
+		this.setState((state, props) => ({squares:
+			state.squares.map((squareRow, j) => {
+				return squareRow.map((square, i) => {
+					if(i == column && j == row) {
+						return Object.assign({...square}, newSquareVals);
+					} else {
+						return square;
+					}
+				});
+			})
+		}));
+	}
+
+	numberBoxesMadeByMove(moveRow, moveColumn, isHorizontal) {
+		let numberBoxesMade = 0;
+		if (isHorizontal) {
+			// Completes box above?
+			if (((moveRow - 1) >= 0) &&
+					(this.state.squares[moveRow-1][moveColumn].vertLine) &&
+					(this.state.squares[moveRow-1][moveColumn].horizLine) &&
+					(this.state.squares[moveRow-1][moveColumn+1].vertLine)) {
+				numberBoxesMade++;
+				this.labelBox(moveRow-1, moveColumn);
+			}
+			// Completes box below?
+			if (((moveRow + 1) < this.state.boardHeight) &&
+					(this.state.squares[moveRow][moveColumn].vertLine) &&
+					(this.state.squares[moveRow+1][moveColumn].horizLine) &&
+					(this.state.squares[moveRow][moveColumn+1].vertLine)) {
+				numberBoxesMade++;
+				this.labelBox(moveRow, moveColumn);
+			}
+		} else { // Is vertical
+			// Completes box to the right?
+			if (((moveColumn + 1) < this.state.boardWidth) &&
+					(this.state.squares[moveRow][moveColumn].horizLine) &&
+					(this.state.squares[moveRow][moveColumn+1].vertLine) &&
+					(this.state.squares[moveRow+1][moveColumn].horizLine)) {
+				numberBoxesMade++;
+				this.labelBox(moveRow, moveColumn);
+			}
+			// Completes box to the left
+			if (((moveColumn - 1) >= 0) &&
+					(this.state.squares[moveRow][moveColumn-1].horizLine) &&
+					(this.state.squares[moveRow][moveColumn-1].vertLine) &&
+					(this.state.squares[moveRow+1][moveColumn-1].horizLine)) {
+				numberBoxesMade++;
+				this.labelBox(moveRow, moveColumn-1);
+			}
+		}
+		return numberBoxesMade;
+	}
+
 
 	determineWinner() {
 		if (this.state.score1 == this.state.score2) {
@@ -372,8 +404,9 @@ class Game extends Component {
 				}
 			}
 			this.setState((state) => ({
-				boardWidth: boardSize, 
-				boardHeight: boardSize, 
+				boardWidth: boardSize,
+				boardHeight: boardSize,
+				squares: createEmptyBoard(boardSize, boardSize),
 				matchNumber: state.matchNumber + 1,
 				score1: 0,
 				score2: 0}));
@@ -404,7 +437,15 @@ class Game extends Component {
 					boardHeight={this.state.boardHeight}
 					onGameMove={this.onGameMove.bind(this)}
 					currentPlayerInitials={this.currentPlayerInitials.bind(this)}
+					numberBoxesMadeByMove={this.numberBoxesMadeByMove.bind(this)}
+					updateBoardSquare={this.updateBoardSquare.bind(this)}
+					squares={this.state.squares}
+					updateMoveStack={this.updateMoveStack.bind(this)}
 				/>
+				<div style={{padding: "4em"}}>
+				<button onClick={() => this.removeLastMove()}
+					style={{width: "9em", height: "3em"}}> Undo Move </button>
+				</div>
 			</div>
 		);
 	}
