@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {hot} from "react-hot-loader"
 import "./App.css";
+import { Move, SquareGrid } from "./utility.js";
 
 const mEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -10,6 +11,8 @@ const mEvents = Object.freeze({
 });
 
 const MAX_BOARD_SIZE = 30;
+
+const GameStateContext = React.createContext(new SquareGrid(2,2));
 
 class SelectionCircle extends Component {
 	render() {return (
@@ -23,14 +26,11 @@ class SelectionCircle extends Component {
 }
 
 class GameBoardSquare extends Component {
+	static contextType = GameStateContext;
 	render() {
 		let className = "gameBoardSquare";
-		if (this.props.column == (this.props.boardWidth - 1)) {
-			className += " rightBorder";
-		}
-		if (this.props.row == (this.props.boardHeight - 1)) {
-			className += " bottomBorder";
-		}
+		if (this.props.column == (this.context.nColumns - 1)) className += " rightBorder";
+		if (this.props.row == (this.context.nRows - 1)) className += " bottomBorder";
 
 		let squareChildren = [
 			<SelectionCircle key={3}
@@ -40,17 +40,24 @@ class GameBoardSquare extends Component {
 			<div key={0} className="dot" />
 		];
 
-		const lineClasses = ["horizLine", "vertLine", "greyedHorizLine", "greyedVertLine"];
-		let counter = 4;
-		for (let [lineClass, renderValue] of Object.entries(this.props.square)) {
-			if (renderValue && lineClasses.includes(lineClass)) {
-				squareChildren.push(<div key={counter} className={lineClass} />);
-				counter++;
-			}
+		if (this.context.hasLineDown(this.props.row, this.props.column)) {
+			squareChildren.push(<div key={4} className="vertLine" />);
 		}
 
-		if (this.props.square.takenBy) {
-			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.square.takenBy} </div>);
+		if (this.context.hasLineToRight(this.props.row, this.props.column)) {
+			squareChildren.push(<div key={5} className="horizLine" />);
+		}
+
+		if (this.props.potentialHorizMove) {
+			squareChildren.push(<div key={6} className="greyedHorizLine" />);
+		}
+
+		if (this.props.potentialVertMove) {
+			squareChildren.push(<div key={7} className="greyedVertLine" />);
+		}
+
+		if (this.props.takenBy) {
+			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.takenBy} </div>);
 		}
 
 		return (
@@ -62,30 +69,46 @@ class GameBoardSquare extends Component {
 }
 
 class GameBoardRow extends Component {
-		render() {
-			const renderedSquares = this.props.squares.map((square, index) => {
-				return (<GameBoardSquare
-					key={index}
-					boardWidth={this.props.boardWidth}
-					boardHeight={this.props.boardHeight}
-					column={index}
-					row={this.props.row}
-					square={square}
-					handleMouseEvent={this.props.handleMouseEvent}
-				/>)}
-			);
-		return (
-			<div key={this.props.row} className="gameBoardRow" >
-				{renderedSquares}
-			</div>
+	static contextType = GameStateContext;
+
+	render() {
+		let renderedSquares = [];
+		for (let index = 0; index < this.context.nColumns; index++) {
+			renderedSquares.push(
+			<GameBoardSquare
+				key={index}
+				column={index}
+				row={this.props.row}
+				potentialVertMove={
+					this.props.potentialMove !== null &&
+					this.props.potentialMove.r == this.props.row &&
+					this.props.potentialMove.c == index &&
+					this.props.potentialMove.isVertical()
+				}
+				potentialHorizMove={
+					this.props.potentialMove !== null &&
+					this.props.potentialMove.r == this.props.row &&
+					this.props.potentialMove.c == index &&
+					this.props.potentialMove.isHorizontal()
+				}
+				handleMouseEvent={this.props.handleMouseEvent}
+				takenBy={this.props.ownershipGridRow[index]}
+			/>)
+		}
+	return (
+		<div key={this.props.row} className="gameBoardRow" >
+			{renderedSquares}
+		</div>
 	)}
 }
 
 class GameBoard extends Component {
+	static contextType = GameStateContext;
 	constructor(props) {
 		super(props);
 		this.state = {
 			selectedCoord: null,
+			potentialMove: null
 		};
 	}
 
@@ -141,15 +164,14 @@ class GameBoard extends Component {
 	}
 
 	render() {
-		const boardSize = Math.min(this.props.boardWidth, this.props.boardHeight);
-		const renderedRows = this.props.squares.map((squareRow, index) => {
+		const boardSize = Math.min(this.context.nColumns, this.context.nRows);
+		const renderedRows = this.context.squares.map((squareRow, index) => {
 			return (<GameBoardRow
 				key={index}
 				row={index}
-				boardWidth={this.props.boardWidth}
-				boardHeight={this.props.boardHeight}
-				squares={squareRow}
+				potentialMove={this.state.potentialMove}
 				handleMouseEvent={this.handleMouseEvent.bind(this)}
+				ownershipGridRow={this.props.ownershipGrid[index]}
 			/>)});
 		return (
 			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}>
@@ -163,23 +185,10 @@ class GameBoard extends Component {
 			"column": Math.min(column, this.state.selectedCoord.column)
 		};
 		const isHorizontal = isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column});
-		const newSquareVals = {};
-
-		// makeMove triggers several functions, doesn't just modify display.  Thus, we
-		// must check whether this truly is a new move before calling numberBoxesMadeByMove
-		const currentSquare = this.props.squares[moveCoords.row][moveCoords.column];
-		if (isHorizontal) {
-			if (currentSquare["horizline"]) return;
-			newSquareVals["horizLine"] = true;
-		} else {
-			if (currentSquare["vertLine"]) return;
-			newSquareVals["vertLine"] = true;
+		const move = new Move(moveCoords.row, moveCoords.column, isHorizontal ? "h" : "v");
+		if (this.context.isMovePossible(move)) {
+			this.props.onGameMove(move);
 		}
-
-		const numberBoxes = this.props.numberBoxesMadeByMove(moveCoords.row, moveCoords.column, isHorizontal);
-		this.props.updateBoardSquare(newSquareVals, moveCoords.row, moveCoords.column);
-		this.props.updateMoveStack(moveCoords.row, moveCoords.column, isHorizontal);
-		this.props.onGameMove(numberBoxes);
 		return;
 	}
 
@@ -188,29 +197,18 @@ class GameBoard extends Component {
 			"row": Math.min(row, this.state.selectedCoord.row),
 			"column": Math.min(column, this.state.selectedCoord.column)
 		};
-		const newSquareVals = {};
 		if (isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column})) {
-			newSquareVals["greyedHorizLine"] = true;
+			this.setState({potentialMove:
+				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "h")});
 		} else {
-			newSquareVals["greyedVertLine"] = true;
+			this.setState({potentialMove:
+				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "v")});
 		}
-		this.props.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
 		return;
 	}
 
-
 	unHighlightPossibleMove(row, column) {
-		const possibleMoveCoords = {
-			"row": Math.min(row, this.state.selectedCoord.row),
-			"column": Math.min(column, this.state.selectedCoord.column)
-		};
-		const newSquareVals = {};
-		if (isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column})) {
-			newSquareVals["greyedHorizLine"] = false;
-		} else {
-			newSquareVals["greyedVertLine"] = false;
-		}
-		this.props.updateBoardSquare(newSquareVals, possibleMoveCoords.row, possibleMoveCoords.column);
+		this.setState({potentialMove: null});
 		return;
 	}
 
@@ -233,13 +231,10 @@ class Game extends Component {
 			score2: 0,
 			playerName1: null,
 			playerName2: null,
-			boardWidth: 0,
-			boardHeight: 0,
 			firstPlayerGoes: true,
-			setupComplete: false,
 			matchNumber: 0,
-			squares: [],
-			moveStack: []
+			squareGrid: new SquareGrid(2,2),
+			ownershipGrid: createEmptyBoard(2,2),
 		};
 	}
 
@@ -258,31 +253,33 @@ class Game extends Component {
 		this.setState({
 			playerName1: playerName1,
 			playerName2: playerName2,
-			boardWidth: boardSize,
-			boardHeight: boardSize,
-			squares: createEmptyBoard(boardSize, boardSize),
-			setupComplete: true
+			squareGrid: new SquareGrid(boardSize, boardSize),
+			ownershipGrid: createEmptyBoard(boardSize, boardSize),
 		});
 		return;
 	}
 
-	componentWillUnmount() {
-		// Currently empty, may not be needed.
-	}
-
 	componentDidUpdate() {
 		//TODO: Find a way to do this that updates all UI before ending game
-		if ((this.state.score1 + this.state.score2) == ((this.state.boardHeight - 1) * (this.state.boardWidth - 1))) {
+		if ((this.state.score1 + this.state.score2) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
 			this.determineWinner();
 		}
 		return;
 	}
 
-	onGameMove(numberBoxesCompleted) {
-		if (numberBoxesCompleted !== 0) {
+	onGameMove(move) {
+		this.setState((state, props) => ({squareGrid: state.squareGrid.update(move)}));
+
+		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(move);
+		for (let box of boxesCompleted) {
+			debugger;
+			this.updateMatrixState("ownershipGrid", this.currentPlayerInitials(), ...box);
+		}
+
+		if (boxesCompleted.length > 0) {
 			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
 			this.setState((state, props) => (
-				{[whichScore]: state[whichScore] + numberBoxesCompleted}));
+				{[whichScore]: state[whichScore] + boxesCompleted.length}));
 		} else {
 			// player does not go again if they do not finish a box / are undoing a box
 			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
@@ -291,99 +288,40 @@ class Game extends Component {
 	}
 
 	removeLastMove() {
-		if (this.state.moveStack.length == 0) return false;
+		const lastMove = this.state.squareGrid.returnLastMove();
+		if (lastMove === null) return false;
+		this.setState((state, props) => ({squareGrid: state.squareGrid.remove(lastMove)}));
 
-		const last = this.state.moveStack[this.state.moveStack.length - 1];
-		this.setState((state, props) => ({moveStack :
-			state.moveStack.filter(
-				(_, index) => index != (state.moveStack.length - 1))}));
-		const numberBoxes = this.numberBoxesMadeByMove(last.row, last.column, last.isHorizontal);
-
-		if (last.isHorizontal) {
-			this.updateBoardSquare({"horizLine": false}, last.row, last.column);
-		} else {
-			this.updateBoardSquare({"vertLine": false}, last.row, last.column);
-
+		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(lastMove);
+		for (let box of boxesCompleted) {
+			debugger;
+			this.updateMatrixState("ownershipGrid", null, ...box);
 		}
-		this.unLabelBox(last.row, last.column);
-		this.onGameMove(-1 * numberBoxes);
+
+		if (boxesCompleted.length > 0) {
+			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
+			this.setState((state, props) => (
+				{[whichScore]: state[whichScore] - boxesCompleted.length}));
+		} else {
+			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
+		}
 		return true;
 	}
 
-	labelBox(boxRow, boxColumn) {
-		this.updateBoardSquare({takenBy: this.currentPlayerInitials()}, boxRow, boxColumn);
-		return;
-	}
-
-	unLabelBox(boxRow, boxColumn) {
-		this.updateBoardSquare({takenBy: null}, boxRow, boxColumn)
-		return;
-	}
-	updateMoveStack(row, column, isHorizontal) {
-		this.setState((state, props) => ({
-			moveStack: [...state.moveStack, {
-				row: row,
-				column: column,
-				isHorizontal: isHorizontal
-			}]
-		}));
-	}
-
-	updateBoardSquare(newSquareVals, row, column) {
+	updateMatrixState(stateVar, newValue, row, column) {
 		// Map through rows and columns to find desired element location to mutate
-		this.setState((state, props) => ({squares:
-			state.squares.map((squareRow, j) => {
-				return squareRow.map((square, i) => {
-					if(i == column && j == row) {
-						return Object.assign({...square}, newSquareVals);
+		this.setState((state, props) => ({[stateVar]:
+			state[stateVar].map((matrixRow, r) => {
+				return matrixRow.map((matrixElement, c) => {
+					if(c == column && r == row) {
+						return newValue;
 					} else {
-						return square;
+						return matrixElement;
 					}
 				});
 			})
 		}));
 	}
-
-	numberBoxesMadeByMove(moveRow, moveColumn, isHorizontal) {
-		let numberBoxesMade = 0;
-		if (isHorizontal) {
-			// Completes box above?
-			if (((moveRow - 1) >= 0) &&
-					(this.state.squares[moveRow-1][moveColumn].vertLine) &&
-					(this.state.squares[moveRow-1][moveColumn].horizLine) &&
-					(this.state.squares[moveRow-1][moveColumn+1].vertLine)) {
-				numberBoxesMade++;
-				this.labelBox(moveRow-1, moveColumn);
-			}
-			// Completes box below?
-			if (((moveRow + 1) < this.state.boardHeight) &&
-					(this.state.squares[moveRow][moveColumn].vertLine) &&
-					(this.state.squares[moveRow+1][moveColumn].horizLine) &&
-					(this.state.squares[moveRow][moveColumn+1].vertLine)) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn);
-			}
-		} else { // Is vertical
-			// Completes box to the right?
-			if (((moveColumn + 1) < this.state.boardWidth) &&
-					(this.state.squares[moveRow][moveColumn].horizLine) &&
-					(this.state.squares[moveRow][moveColumn+1].vertLine) &&
-					(this.state.squares[moveRow+1][moveColumn].horizLine)) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn);
-			}
-			// Completes box to the left
-			if (((moveColumn - 1) >= 0) &&
-					(this.state.squares[moveRow][moveColumn-1].horizLine) &&
-					(this.state.squares[moveRow][moveColumn-1].vertLine) &&
-					(this.state.squares[moveRow+1][moveColumn-1].horizLine)) {
-				numberBoxesMade++;
-				this.labelBox(moveRow, moveColumn-1);
-			}
-		}
-		return numberBoxesMade;
-	}
-
 
 	determineWinner() {
 		if (this.state.score1 == this.state.score2) {
@@ -404,9 +342,8 @@ class Game extends Component {
 				}
 			}
 			this.setState((state) => ({
-				boardWidth: boardSize,
-				boardHeight: boardSize,
-				squares: createEmptyBoard(boardSize, boardSize),
+				squareGrid: new SquareGrid(boardSize, boardSize),
+				ownershipGrid: createEmptyBoard(boardSize, boardSize),
 				matchNumber: state.matchNumber + 1,
 				score1: 0,
 				score2: 0}));
@@ -424,24 +361,19 @@ class Game extends Component {
 	}
 
 	render() {
-		if (!this.state.setupComplete) {return null;}
-		// Setup is complete
 		// TODO: Should score be stored elsewhere?  Maybe state changes cause unnecessary GameBoard re-renderings?  Look into it.
 		return (
 			<div>
 				<h1>{this.state.playerName1}[{this.state.score1}] vs {this.state.playerName2}[{this.state.score2}]</h1>
 				<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
-				<GameBoard
-					key={this.state.matchNumber}
-					boardWidth={this.state.boardWidth}
-					boardHeight={this.state.boardHeight}
-					onGameMove={this.onGameMove.bind(this)}
-					currentPlayerInitials={this.currentPlayerInitials.bind(this)}
-					numberBoxesMadeByMove={this.numberBoxesMadeByMove.bind(this)}
-					updateBoardSquare={this.updateBoardSquare.bind(this)}
-					squares={this.state.squares}
-					updateMoveStack={this.updateMoveStack.bind(this)}
-				/>
+				<GameStateContext.Provider value={this.state.squareGrid}>
+					<GameBoard
+						key={this.state.matchNumber}
+						onGameMove={this.onGameMove.bind(this)}
+						currentPlayerInitials={this.currentPlayerInitials.bind(this)}
+						ownershipGrid={this.state.ownershipGrid}
+					/>
+				</GameStateContext.Provider>
 				<div style={{padding: "4em"}}>
 				<button onClick={() => this.removeLastMove()}
 					style={{width: "9em", height: "3em"}}> Undo Move </button>
@@ -462,13 +394,11 @@ class App extends Component {
 }
 
 function createEmptyBoard(rows, columns) {
-	let row = [];
-	for (var i = 0; i < columns; i++) {
-		row.push({});
-	}
 	let board = [];
-	for (var j = 0; j < rows; j++) {
-		board.push(row.map(() => Object.assign({})));
+	for (let r = 0; r < rows; r++) {
+		let row = [];
+		for (let c = 0; c < columns; c++) row.push(null);
+		board.push(row);
 	}
 	return board;
 }
@@ -490,6 +420,15 @@ function determineScalingFactor(boardSize) {
 	const boardSizeInPx = 6 * (boardSize - 1) + 1;
 	const pxScaleFactor = numPxInViewport * fractionOfScreenTaken / boardSizeInPx;
 	return Math.min(pxScaleFactor, maxPxScaleFactor);
+}
+
+function isEmpty(object) {
+	for (let key in object) {
+		if (object.hasOwnProperty(key)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 export default hot(module)(App);
