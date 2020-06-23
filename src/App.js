@@ -14,6 +14,14 @@ const MAX_BOARD_SIZE = 30;
 
 const GameStateContext = React.createContext(new SquareGrid(2,2));
 
+export const mouseTracker = {
+	// We need to know of the current mouse state for some functionalities
+	mouseButtonDown : false,
+	onUp() { this.mouseButtonDown = false; 	},
+	onDown() { this.mouseButtonDown = true;  },
+	isMouseButtonDown() { return this.mouseButtonDown; }
+};
+
 class SelectionCircle extends Component {
 	render() {return (
 		<div className="selectedCoordCircle"
@@ -135,17 +143,22 @@ class GameBoard extends Component {
 			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
 			switch(event) {
 				case mEvents.DOWN:
-					// We should actually never arrive here, because mEvents.UP happens first
-					// and sets self.state.selectedCoord to null
+					this.unHighlightPossibleMove();
+					this.setState({selectedCoord : {"column": column, "row": row}});
 					break;
 				case mEvents.UP:
 					if (isAdjacent) {
 						this.makeMove(row, column);
-						this.unHighlightPossibleMove(row, column);
+						this.unHighlightPossibleMove();
 					}
 					this.setState({selectedCoord : null});
 					break;
 				case mEvents.ENTER:
+					if (!mouseTracker.isMouseButtonDown()) {
+						// happens when mouse is released outside of a selection circle
+						this.setState({selectedCoord : null});
+						break;
+					}
 					this.highlightDot(row, column);
 					if (isAdjacent) {
 						this.highlightPossibleMove(row, column);
@@ -153,7 +166,7 @@ class GameBoard extends Component {
 					break;
 				case mEvents.LEAVE:
 					if (isAdjacent) {
-						this.unHighlightPossibleMove(row, column);
+						this.unHighlightPossibleMove();
 					}
 					if (selRow != row || selColumn != column) {
 						this.unHighlightDot(row, column);
@@ -207,7 +220,7 @@ class GameBoard extends Component {
 		return;
 	}
 
-	unHighlightPossibleMove(row, column) {
+	unHighlightPossibleMove() {
 		this.setState({potentialMove: null});
 		return;
 	}
@@ -272,7 +285,6 @@ class Game extends Component {
 
 		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(move);
 		for (let box of boxesCompleted) {
-			debugger;
 			this.updateMatrixState("ownershipGrid", this.currentPlayerInitials(), ...box);
 		}
 
@@ -294,7 +306,6 @@ class Game extends Component {
 
 		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(lastMove);
 		for (let box of boxesCompleted) {
-			debugger;
 			this.updateMatrixState("ownershipGrid", null, ...box);
 		}
 
