@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {hot} from "react-hot-loader"
 import "./App.css";
 import { Move, SquareGrid } from "./utility.js";
+import { LocalHumanPlayer, RandomPlayer } from "./players.js";
 
 const mEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -112,6 +113,7 @@ class GameBoardRow extends Component {
 
 class GameBoard extends Component {
 	static contextType = GameStateContext;
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -240,47 +242,62 @@ class Game extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			score1: 0,
-			score2: 0,
-			playerName1: null,
-			playerName2: null,
-			firstPlayerGoes: true,
+			players: [],
+			currentPlayer: 1,
 			matchNumber: 0,
 			squareGrid: new SquareGrid(2,2),
 			ownershipGrid: createEmptyBoard(2,2),
+			localMoveCallback: null
 		};
 	}
 
 	componentDidMount() {
-		const playerName1 = prompt("Player 1, please enter your name");
-		const playerName2 = prompt("Player 2, please enter your name");
-		let boardSize;
-		while(true) {
-			boardSize = parseInt(prompt("What size board would you like?"), 10);
-			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
-				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
-			} else {
-				break;
-			}
-		}
-		this.setState({
-			playerName1: playerName1,
-			playerName2: playerName2,
-			squareGrid: new SquareGrid(boardSize, boardSize),
-			ownershipGrid: createEmptyBoard(boardSize, boardSize),
-		});
-		return;
+		this.setUpGame();
 	}
 
 	componentDidUpdate() {
 		//TODO: Find a way to do this that updates all UI before ending game
+		/*
 		if ((this.state.score1 + this.state.score2) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
 			this.determineWinner();
 		}
+		
+		*/
 		return;
 	}
 
+	render() {
+		if (this.state.players.length < 2) {
+			return null;
+		}
+		const player1 = this.state.players[0];
+		const player2 = this.state.players[1];
+		return (
+			<div>
+				<h1>{player1._name}[{player1.score}] vs {player2._name}[{player2.score}]</h1>
+				<h2>Current player is {this.state.players[this.state.currentPlayer]._name}</h2>
+				<GameStateContext.Provider value={this.state.squareGrid}>
+					<GameBoard
+						key={this.state.matchNumber}
+						onGameMove={this.onGameMove.bind(this)}
+						currentPlayerInitials={this.currentPlayerInitials.bind(this)}
+						ownershipGrid={this.state.ownershipGrid}
+					/>
+				</GameStateContext.Provider>
+				<div style={{padding: "4em"}}>
+				<button onClick={() => this.removeLastMove()}
+					style={{width: "9em", height: "3em"}}> Undo Move </button>
+				</div>
+			</div>
+		);
+	}
+
 	onGameMove(move) {
+		if (this.state.localMoveCallback) {
+			this.state.localMoveCallback(move);
+		}
+		// that's it... lol If my code is working I'll get back to it
+		/*
 		this.setState((state, props) => ({squareGrid: state.squareGrid.update(move)}));
 
 		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(move);
@@ -297,12 +314,54 @@ class Game extends Component {
 			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
 		}
 		return;
+		*/
 	}
 
+	nextTurn() {
+		// TODO: currently, we're accesing the this.state.currentPlayer
+		// variable then using it to mutate state later.  This can cause
+		// bugs, all the code should instead be within a setState call 
+		// [gross, but necessary I guess]
+		const currPlayer = this.state.players[this.state.currentPlayer];
+		const moveCompletedCallback = (move) => {
+			if (!this.state.squareGrid.isMovePossible(move)) {
+				new Error("nextTurn(), player " + currPlayer.name +
+					"emitted invalid move " + move.toString());
+			}
+			this.setState((state) => ({squareGrid: state.squareGrid.update(move)}));
+			const boxesCompleted = this.state.squareGrid.boxesCompletedBy(move);
+			for (let box of boxesCompleted) {
+				this.updateMatrixState("ownershipGrid", this.currentPlayerInitials(), ...box);
+			}
+			currPlayer.addScore(boxesCompleted.length);
+			if (boxesCompleted.length == 0) {
+				this.setState(
+					(state) => ({currentPlayer: ((state.currentPlayer == 0)? 1 : 0)}),
+					() => this.nextTurn()
+				);
+			} else {
+				// I want to be certain that all of the state changes in this callback
+				// have been committed before the next turn begins.
+				this.setState(
+					(state) => ({currentPlayer: state.currentPlayer}),
+					() => this.nextTurn()
+				);
+			}
+		};
+
+		this.setState({localMoveCallback: currPlayer.nextMove(this.state.squareGrid, moveCompletedCallback)});
+	
+		console.log("callback currplayer: " + this.state.currentPlayer);}
+
 	removeLastMove() {
+		// You can only remove moves if you are a LocalHumanPlayer and it is your turn
+		if (!(this.state.players[this.state.currentPlayer] instanceof LocalHumanPlayer)) {
+			return;
+		}
+
 		const lastMove = this.state.squareGrid.returnLastMove();
 		if (lastMove === null) return false;
-		this.setState((state, props) => ({squareGrid: state.squareGrid.remove(lastMove)}));
+		this.setState((state) => ({squareGrid: state.squareGrid.remove(lastMove)}));
 
 		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(lastMove);
 		for (let box of boxesCompleted) {
@@ -310,11 +369,14 @@ class Game extends Component {
 		}
 
 		if (boxesCompleted.length > 0) {
-			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
-			this.setState((state, props) => (
-				{[whichScore]: state[whichScore] - boxesCompleted.length}));
+			// TODO: Should be a more elegant way of modifying score
+			this.setState((state, props) => ({
+				players: state.players.map((player, index) => {
+					if (index == state.currentPlayer) {
+						player.addScore(-1 * boxesCompleted.length)}
+					return player;})}));
 		} else {
-			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
+			this.setState((state, props) => ({currentPlayer: (state.currentPlayer == 0)? 1 : 0}));
 		}
 		return true;
 	}
@@ -335,62 +397,59 @@ class Game extends Component {
 	}
 
 	determineWinner() {
-		if (this.state.score1 == this.state.score2) {
+		// Assumes only two players for now
+		if (this.state.players[0].score == this.state.players[1].score) {
 			alert("The Match was a tie!!");
-		} else if (this.state.score1 > this.state.score2) {
-			alert(this.state.playerName1 + " is the winner");
+		} else if (this.state.players[0].score > this.state.players[1].score) {
+			alert(this.state.players[0].name + " is the winner");
 		} else {
-			alert(this.state.playerName2 + " is the winner");
+			alert(this.state.players[1].name + " is the winner");
 		}
 		if (confirm("Would you like to play again?")) {
-			let boardSize;
-			while(true) {
-				boardSize = parseInt(prompt("What size board would you like?"), 10);
-				if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
-					alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
-				} else {
-					break;
-				}
-			}
-			this.setState((state) => ({
-				squareGrid: new SquareGrid(boardSize, boardSize),
-				ownershipGrid: createEmptyBoard(boardSize, boardSize),
-				matchNumber: state.matchNumber + 1,
-				score1: 0,
-				score2: 0}));
+			this.setUpGame();
 		}
+	}
+
+	setUpGame() {
+		const playerName1 = prompt("Player 1, please enter your name");
+		const playAI = confirm("Would you like to face an AI opponent?");
+		let player1 = new LocalHumanPlayer(playerName1);
+		let player2;
+		if (playAI) {
+			player2 = new RandomPlayer("CPU");
+		} else {
+			const playerName2 = prompt("Player 2, please enter your name");
+			player2 = new LocalHumanPlayer(playerName2);
+		}
+		let boardSize;
+		while(true) {
+			boardSize = parseInt(prompt("What size board would you like?"), 10);
+			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
+				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
+			} else {
+				break;
+			}
+		}	
+		// TODO: Currently "nextTurn" is happening at beginning so
+		// player2 is actually going first.  Low priority issue
+		this.setState({
+			players: [player1, player2],
+			currentPlayer: 0,
+			squareGrid: new SquareGrid(boardSize, boardSize),
+			ownershipGrid: createEmptyBoard(boardSize, boardSize),
+		}, () => this.nextTurn());
 	}
 
 	currentPlayerInitials() {
 		//TODO: handle multiple part names with up to three initials
 		// e.g. Hillary Rodham Clinton -> HRC
-		if (this.state.firstPlayerGoes) {
-			return this.state.playerName1.charAt(0);
+		const name = this.state.players[this.state.currentPlayer]._name;
+		//TODO: change this quick hacky fix to something more permanent
+		if (name == "CPU") {
+			return "CPU";
 		} else {
-			return this.state.playerName2.charAt(0);
+			this.state.players[this.state.currentPlayer]._name.charAt(0);
 		}
-	}
-
-	render() {
-		// TODO: Should score be stored elsewhere?  Maybe state changes cause unnecessary GameBoard re-renderings?  Look into it.
-		return (
-			<div>
-				<h1>{this.state.playerName1}[{this.state.score1}] vs {this.state.playerName2}[{this.state.score2}]</h1>
-				<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
-				<GameStateContext.Provider value={this.state.squareGrid}>
-					<GameBoard
-						key={this.state.matchNumber}
-						onGameMove={this.onGameMove.bind(this)}
-						currentPlayerInitials={this.currentPlayerInitials.bind(this)}
-						ownershipGrid={this.state.ownershipGrid}
-					/>
-				</GameStateContext.Provider>
-				<div style={{padding: "4em"}}>
-				<button onClick={() => this.removeLastMove()}
-					style={{width: "9em", height: "3em"}}> Undo Move </button>
-				</div>
-			</div>
-		);
 	}
 }
 
