@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {hot} from "react-hot-loader"
 import "./App.css";
 import { Move, SquareGrid } from "./utility.js";
+import { LocalHumanPlayer, RandomPlayer } from "./players.js";
 
 const mEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -112,6 +113,7 @@ class GameBoardRow extends Component {
 
 class GameBoard extends Component {
 	static contextType = GameStateContext;
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -240,143 +242,40 @@ class Game extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			score1: 0,
-			score2: 0,
-			playerName1: null,
-			playerName2: null,
-			firstPlayerGoes: true,
+			players: [],
+			currentPlayer: 1,
 			matchNumber: 0,
 			squareGrid: new SquareGrid(2,2),
 			ownershipGrid: createEmptyBoard(2,2),
+			localMoveCallback: null
 		};
 	}
 
 	componentDidMount() {
-		const playerName1 = prompt("Player 1, please enter your name");
-		const playerName2 = prompt("Player 2, please enter your name");
-		let boardSize;
-		while(true) {
-			boardSize = parseInt(prompt("What size board would you like?"), 10);
-			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
-				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
-			} else {
-				break;
-			}
-		}
-		this.setState({
-			playerName1: playerName1,
-			playerName2: playerName2,
-			squareGrid: new SquareGrid(boardSize, boardSize),
-			ownershipGrid: createEmptyBoard(boardSize, boardSize),
-		});
-		return;
+		this.setUpGame();
 	}
 
 	componentDidUpdate() {
 		//TODO: Find a way to do this that updates all UI before ending game
+		/*
 		if ((this.state.score1 + this.state.score2) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
 			this.determineWinner();
 		}
+		
+		*/
 		return;
-	}
-
-	onGameMove(move) {
-		this.setState((state, props) => ({squareGrid: state.squareGrid.update(move)}));
-
-		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(move);
-		for (let box of boxesCompleted) {
-			this.updateMatrixState("ownershipGrid", this.currentPlayerInitials(), ...box);
-		}
-
-		if (boxesCompleted.length > 0) {
-			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
-			this.setState((state, props) => (
-				{[whichScore]: state[whichScore] + boxesCompleted.length}));
-		} else {
-			// player does not go again if they do not finish a box / are undoing a box
-			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
-		}
-		return;
-	}
-
-	removeLastMove() {
-		const lastMove = this.state.squareGrid.returnLastMove();
-		if (lastMove === null) return false;
-		this.setState((state, props) => ({squareGrid: state.squareGrid.remove(lastMove)}));
-
-		const boxesCompleted = this.state.squareGrid.boxesCompletedBy(lastMove);
-		for (let box of boxesCompleted) {
-			this.updateMatrixState("ownershipGrid", null, ...box);
-		}
-
-		if (boxesCompleted.length > 0) {
-			const whichScore = this.state.firstPlayerGoes ? "score1" : "score2";
-			this.setState((state, props) => (
-				{[whichScore]: state[whichScore] - boxesCompleted.length}));
-		} else {
-			this.setState((state, props) => ({firstPlayerGoes: !state.firstPlayerGoes}));
-		}
-		return true;
-	}
-
-	updateMatrixState(stateVar, newValue, row, column) {
-		// Map through rows and columns to find desired element location to mutate
-		this.setState((state, props) => ({[stateVar]:
-			state[stateVar].map((matrixRow, r) => {
-				return matrixRow.map((matrixElement, c) => {
-					if(c == column && r == row) {
-						return newValue;
-					} else {
-						return matrixElement;
-					}
-				});
-			})
-		}));
-	}
-
-	determineWinner() {
-		if (this.state.score1 == this.state.score2) {
-			alert("The Match was a tie!!");
-		} else if (this.state.score1 > this.state.score2) {
-			alert(this.state.playerName1 + " is the winner");
-		} else {
-			alert(this.state.playerName2 + " is the winner");
-		}
-		if (confirm("Would you like to play again?")) {
-			let boardSize;
-			while(true) {
-				boardSize = parseInt(prompt("What size board would you like?"), 10);
-				if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
-					alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
-				} else {
-					break;
-				}
-			}
-			this.setState((state) => ({
-				squareGrid: new SquareGrid(boardSize, boardSize),
-				ownershipGrid: createEmptyBoard(boardSize, boardSize),
-				matchNumber: state.matchNumber + 1,
-				score1: 0,
-				score2: 0}));
-		}
-	}
-
-	currentPlayerInitials() {
-		//TODO: handle multiple part names with up to three initials
-		// e.g. Hillary Rodham Clinton -> HRC
-		if (this.state.firstPlayerGoes) {
-			return this.state.playerName1.charAt(0);
-		} else {
-			return this.state.playerName2.charAt(0);
-		}
 	}
 
 	render() {
-		// TODO: Should score be stored elsewhere?  Maybe state changes cause unnecessary GameBoard re-renderings?  Look into it.
+		if (this.state.players.length < 2) {
+			return null;
+		}
+		const player1 = this.state.players[0];
+		const player2 = this.state.players[1];
 		return (
 			<div>
-				<h1>{this.state.playerName1}[{this.state.score1}] vs {this.state.playerName2}[{this.state.score2}]</h1>
-				<h2>Current player is {this.state.firstPlayerGoes? this.state.playerName1 : this.state.playerName2}</h2>
+				<h1>{player1._name}[{player1.score}] vs {player2._name}[{player2.score}]</h1>
+				<h2>Current player is {this.state.players[this.state.currentPlayer]._name}</h2>
 				<GameStateContext.Provider value={this.state.squareGrid}>
 					<GameBoard
 						key={this.state.matchNumber}
@@ -392,6 +291,145 @@ class Game extends Component {
 			</div>
 		);
 	}
+
+	onGameMove(move) {
+		if (this.state.localMoveCallback) {
+			this.state.localMoveCallback(move);
+		}
+	}
+
+	nextTurn() {
+		const moveCompletedCallback = (move) => {
+			this.setState((state) => {
+				const currPlayer = state.players[state.currentPlayer];
+				const newState = {};
+
+				if (!state.squareGrid.isMovePossible(move)) {
+					new Error("nextTurn(), player " + currPlayer.name +
+						"emitted invalid move " + move.toString());
+				}
+				newState.squareGrid = state.squareGrid.update(move);
+				
+				const boxesCompleted = state.squareGrid.boxesCompletedBy(move);	
+				debugger;
+				newState.ownershipGrid = updateMatrixState(state.ownershipGrid, 
+					boxesCompleted.map(box => ({
+						value: this.currentPlayerInitials(state),
+						row: box[0],
+						column: box[1]})
+					)
+				);
+
+				newState.players = state.players.map((player, index) =>
+					{ return index == state.currentPlayer ? currPlayer.addScore(boxesCompleted.length) : player });
+
+				if (boxesCompleted.length == 0) {
+					newState.currentPlayer = (state.currentPlayer == 0) ? 1 : 0;
+				} 
+				return newState;
+			}, () => this.nextTurn());
+		};
+
+		this.setState(state => ({
+			localMoveCallback: state.players[state.currentPlayer].nextMove(
+				this.state.squareGrid, moveCompletedCallback)
+		}), () => {this.state.players[this.state.currentPlayer].generateNextMove()});	
+	}
+
+	removeLastMove() {
+		this.setState(state => {	
+			const currPlayer = state.players[state.currentPlayer];
+			const newState = {};
+
+			// Only allow move removal for local players.
+			if (!(currPlayer instanceof LocalHumanPlayer)) { 
+				return;
+			}		
+
+			const lastMove = state.squareGrid.returnLastMove();
+			if (lastMove === null) return;
+			newState.squareGrid = state.squareGrid.remove(lastMove);
+
+			const boxesCompleted = state.squareGrid.boxesCompletedBy(lastMove);
+			newState.ownershipGrid = updateMatrixState(state.ownershipGrid,
+				boxesCompleted.map(box => ({
+					value: null,
+					row: box[0],
+					column: box[1]})
+				)
+			);
+
+			newState.players = state.players.map((player, index) =>
+				{ return index == state.currentPlayer ? currPlayer.addScore( -1* boxesCompleted.length) : player});
+
+			if (boxesCompleted.length == 0) {
+				newState.currentPlayer = (state.currentPlayer == 0) ? 1 : 0;
+			} else {
+				newState.currentPlayer = state.currentPlayer;
+			}
+
+			return newState;
+		}, () => this.nextTurn());
+	}
+
+	determineWinner() {
+		// Assumes only two players for now
+		if (this.state.players[0].score == this.state.players[1].score) {
+			alert("The Match was a tie!!");
+		} else if (this.state.players[0].score > this.state.players[1].score) {
+			alert(this.state.players[0].name + " is the winner");
+		} else {
+			alert(this.state.players[1].name + " is the winner");
+		}
+		if (confirm("Would you like to play again?")) {
+			this.setUpGame();
+		}
+	}
+
+	setUpGame() {
+		const playerName1 = prompt("Player 1, please enter your name");
+		const playAI = confirm("Would you like to face an AI opponent?");
+		let player1 = new LocalHumanPlayer(playerName1);
+		let player2;
+		if (playAI) {
+			player2 = new RandomPlayer("CPU");
+		} else {
+			const playerName2 = prompt("Player 2, please enter your name");
+			player2 = new LocalHumanPlayer(playerName2);
+		}
+		let boardSize;
+		while(true) {
+			boardSize = parseInt(prompt("What size board would you like?"), 10);
+			if (Number.isNaN(boardSize) || boardSize < 2 || boardSize > MAX_BOARD_SIZE) {
+				alert("Invalid board size selected.  Must be between 2 and " + MAX_BOARD_SIZE);
+			} else {
+				break;
+			}
+		}	
+		// TODO: Currently "nextTurn" is happening at beginning so
+		// player2 is actually going first.  Low priority issue
+		this.setState({
+			players: [player1, player2],
+			currentPlayer: 0,
+			squareGrid: new SquareGrid(boardSize, boardSize),
+			ownershipGrid: createEmptyBoard(boardSize, boardSize),
+		}, () => this.nextTurn());
+	}
+
+	currentPlayerInitials(state) {
+		if (state === undefined) {
+			state = this.state;
+		}
+		//TODO: handle multiple part names with up to three initials
+		// e.g. Hillary Rodham Clinton -> HRC
+		const name = state.players[state.currentPlayer]._name;
+		//TODO: change this quick hacky fix to something more permanent
+		if (name == "CPU") {
+			return "CPU";
+		} else {
+			return name.charAt(0);
+		}
+	}
 }
 
 class App extends Component {
@@ -403,6 +441,19 @@ class App extends Component {
 		);
 	}
 }
+
+function updateMatrixState(matrix, valuesWithCoordinates) {
+		// Map through rows and columns to find desired element location to mutate
+		if (valuesWithCoordinates.length == 0) return matrix;
+		return matrix.map((matrixRow, r) => 
+			matrixRow.map((matrixElement, c) => {
+				for (const v of valuesWithCoordinates) {
+					if (v.column == c && v.row == r) return v.value;
+				}
+				return matrixElement;
+			})
+		);
+	}
 
 function createEmptyBoard(rows, columns) {
 	let board = [];
