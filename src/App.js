@@ -255,17 +255,6 @@ class Game extends Component {
 		this.setUpGame();
 	}
 
-	componentDidUpdate() {
-		//TODO: Find a way to do this that updates all UI before ending game
-		/*
-		if ((this.state.score1 + this.state.score2) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
-			this.determineWinner();
-		}
-		
-		*/
-		return;
-	}
-
 	render() {
 		if (this.state.players.length < 2) {
 			return null;
@@ -299,6 +288,7 @@ class Game extends Component {
 	}
 
 	nextTurn() {
+		
 		const moveCompletedCallback = (move) => {
 			this.setState((state) => {
 				const currPlayer = state.players[state.currentPlayer];
@@ -311,7 +301,6 @@ class Game extends Component {
 				newState.squareGrid = state.squareGrid.update(move);
 				
 				const boxesCompleted = state.squareGrid.boxesCompletedBy(move);	
-				debugger;
 				newState.ownershipGrid = updateMatrixState(state.ownershipGrid, 
 					boxesCompleted.map(box => ({
 						value: this.currentPlayerInitials(state),
@@ -333,7 +322,13 @@ class Game extends Component {
 		this.setState(state => ({
 			localMoveCallback: state.players[state.currentPlayer].nextMove(
 				this.state.squareGrid, moveCompletedCallback)
-		}), () => {this.state.players[this.state.currentPlayer].generateNextMove()});	
+		}), () => {
+			// TODO:  Make it so that the last move is rendered before the game is stopped.
+			if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
+				this.determineWinner();
+			}
+			this.state.players[this.state.currentPlayer].generateNextMove();
+		});
 	}
 
 	removeLastMove() {
@@ -377,9 +372,9 @@ class Game extends Component {
 		if (this.state.players[0].score == this.state.players[1].score) {
 			alert("The Match was a tie!!");
 		} else if (this.state.players[0].score > this.state.players[1].score) {
-			alert(this.state.players[0].name + " is the winner");
+			alert(`${this.state.players[0]._name} is the winner, ${this.state.players[0].score} to ${this.state.players[1].score}!`);
 		} else {
-			alert(this.state.players[1].name + " is the winner");
+			alert(`${this.state.players[1]._name} is the winner, ${this.state.players[1].score} to ${this.state.players[0].score}!`);
 		}
 		if (confirm("Would you like to play again?")) {
 			this.setUpGame();
@@ -406,8 +401,7 @@ class Game extends Component {
 				break;
 			}
 		}	
-		// TODO: Currently "nextTurn" is happening at beginning so
-		// player2 is actually going first.  Low priority issue
+
 		this.setState({
 			players: [player1, player2],
 			currentPlayer: 0,
