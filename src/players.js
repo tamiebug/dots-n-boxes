@@ -87,3 +87,69 @@ export class RandomPlayer extends Player {
 		setTimeout(() => this.performRandomMove(this._currentState.allPossibleMoves()), 700);
   }
 }
+
+export class WeakAI extends Player {
+  constructor(name) {
+    super(name);
+  }
+
+  onLocalMoveAttempt(move) {
+    //ignore
+    return;
+  }
+
+  generateNextMove() {
+    // The strategy for this Weak AI is to:
+    // 1. Always take boxes given, randomly
+    // 2. Never give boxes unless only valid move
+
+    debugger;
+    if (this._currentState == null) {
+      throw new Error("WeakAI generateNextMove called with null _currentState");
+    }
+
+    const squareCompleters = this._currentState.findSquareCompletingMoves();
+    if (squareCompleters.length > 0) {
+      this.performRandomMove(squareCompleters);
+      return;
+    }
+
+    const squareCompletionMakers = findCompletableSquareMakers(this._currentState);
+    const allMoves = this._currentState.allPossibleMoves();
+    if (squareCompletionMakers.length == allMoves.length) {
+      // we only have bad moves, just choose one at random
+      // TODO: Improve this to choose one that gives least boxes
+      this.performRandomMove(allMoves);
+      return;
+    } else {
+      const goodMoves = allMoves.filter(move => {
+        for (const badMove of squareCompletionMakers) {
+          if (move.equals(badMove)) return false;
+        }
+        return true;
+      });
+      this.performRandomMove(goodMoves);
+      return;
+    }
+  }
+}
+
+function findCompletableSquareMakers(boardState, moveSubset) {
+  if (moveSubset === undefined) {
+    moveSubset = boardState.allPossibleMoves();
+  }
+  // Find moves that create almost completed boxes like |_|
+  // A good AI will want to know which one of their moves do this
+  // so they don't just give free points to their opponent next turn.
+  let badMoves = [];
+  for (const move of moveSubset) {
+    // I want to add the move to a pseudo-board and check this pseudoboard
+    // for completable boxes to the sides of this box.
+    const testGrid = boardState.update(move);
+    const adjacentTestMoves = boardState.adjacentBoxMoves(move).filter(move => testGrid.isMovePossible(move));
+    if (testGrid.findSquareCompletingMoves(adjacentTestMoves).length > 0) {
+      badMoves.push(move);
+    }
+  }
+  return badMoves;
+}

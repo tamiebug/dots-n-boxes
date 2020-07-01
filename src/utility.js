@@ -67,7 +67,7 @@ export class SquareGrid {
   // e.g.   |    <-- moving here to create |   |
   //        |---                           |---|
   let foundMoves = [];
-  for (const move in moveSet) {
+  for (const move of moveSet) {
     if (this.moveCompletesBoxAbove(move) ||
         this.moveCompletesBoxBelow(move) ||
         this.moveCompletesBoxToRight(move) ||
@@ -78,12 +78,12 @@ export class SquareGrid {
     return foundMoves;
   }
 
-  adjacentBoxMoves(boardState, move) {
+  adjacentBoxMoves(move) {
     // This function should return all the possible moves on the
     // boundary of the two boxes adjacent to a given move
     // i.e. for a horizontal line move, moves part of the box above
     // and below
-    if (!boardState.isMovePossible(move)) return null;
+    if (!this.isMovePossible(move)) return null;
     if (move.isHorizontal()) {
       return [
         // moves in above box
@@ -94,19 +94,19 @@ export class SquareGrid {
         new Move(move.r    , move.c,     "v"),
         new Move(move.r + 1, move.c,     "h"),
         new Move(move.r    , move.c + 1, "v")
-      ];
+      ].filter(move => this.isMoveWithinBounds(move));
     } else {
       //move.isVertical() == true;
       return [
         // moves in box to right
         new Move(move.r    , move.c    , "h"),
         new Move(move.r    , move.c + 1, "v"),
-        new Move(move.r + 1, move.c + 1, "h"),
+        new Move(move.r + 1, move.c    , "h"),
         // moves in box to the left
         new Move(move.r    , move.c - 1, "h"),
         new Move(move.r    , move.c - 1, "v"),
         new Move(move.r - 1, move.c - 1, "h")
-      ];
+      ].filter(move => this.isMoveWithinBounds(move));
     }
   }
 
@@ -188,7 +188,7 @@ export class SquareGrid {
         this.hasLineToRight(move.r + 1, move.c -1)) {
       return true;
     } else {
-    return false;
+      return false;
     }
   }
 
@@ -259,9 +259,11 @@ export class Move {
   }
 
   equals(move) {
-    this.r = move.r;
-    this.c = move.c;
-    this._isHoriz = move._isHoriz;
+    return (
+      this.r == move.r &&
+      this.c == move.c &&
+      this._isHoriz == move._isHoriz
+    );
   }
 
 	toString() {

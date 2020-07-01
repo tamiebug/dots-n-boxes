@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {hot} from "react-hot-loader"
 import "./App.css";
 import { Move, SquareGrid } from "./utility.js";
-import { LocalHumanPlayer, RandomPlayer } from "./players.js";
+import { LocalHumanPlayer, WeakAI, RandomPlayer } from "./players.js";
 
 const mEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -324,6 +324,7 @@ class Game extends Component {
 				this.state.squareGrid, moveCompletedCallback)
 		}), () => {
 			// TODO:  Make it so that the last move is rendered before the game is stopped.
+			// For some reason the move is rendered if you debugger pause, but not during normal execution.
 			if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
 				this.determineWinner();
 			}
@@ -387,7 +388,7 @@ class Game extends Component {
 		let player1 = new LocalHumanPlayer(playerName1);
 		let player2;
 		if (playAI) {
-			player2 = new RandomPlayer("CPU");
+			player2 = new WeakAI("CPU");
 		} else {
 			const playerName2 = prompt("Player 2, please enter your name");
 			player2 = new LocalHumanPlayer(playerName2);
