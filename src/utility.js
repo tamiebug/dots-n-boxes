@@ -105,7 +105,7 @@ export class SquareGrid {
         // moves in box to the left
         new Move(move.r    , move.c - 1, "h"),
         new Move(move.r    , move.c - 1, "v"),
-        new Move(move.r - 1, move.c - 1, "h")
+        new Move(move.r + 1, move.c - 1, "h")
       ].filter(move => this.isMoveWithinBounds(move));
     }
   }
@@ -241,6 +241,7 @@ export class Move {
     if (orientation == "horiz" ||
         orientation == "horizontal" ||
         orientation === true ||
+        orientation == "true" ||
         orientation == "h") {
       this._isHoriz = true;
     } else {
@@ -266,9 +267,37 @@ export class Move {
     );
   }
 
+  isAdjacentBoxMoveOf(move) {
+    if (this.isHorizontal()) {
+      if (move.isHorizontal()) {
+        return (this.r == move.r-1 && this.c == move.c) ||
+          (this.r == move.r+1 && this.c == move.c);
+      } else /* move.isVertical() */ {
+        return (this.r == move.r+1 && this.c == move.c) || 
+          (this.r == move.r+1 && this.c == move.c-1) ||
+          (this.r == move.r && this.c == move.c) ||
+          (this.r == move.r && this.c == move.c-1);
+      }
+    } else /* this.isVertical() */ {
+      if (move.isHorizontal()) {
+        return (this.r == move.r && this.c == move.c) ||
+          (this.r == move.r-1 && this.c == move.c) ||
+          (this.r == move.r && this.c == move.c+1) ||
+          (this.r == move.r-1 && this.c == move.c+1);
+      } else /* move.isVertical() */ {
+        return (this.r == move.r && this.c == move.c+1) ||
+          (this.r == move.r && this.c == move.c-1);
+      }
+    }
+  }
+
 	toString() {
 		return "(" + move.r + ", " + move.c + ", " + move.isHorizontal()? "h)" : "v)";
-	}
+  }
+  
+  static fromJSON(JSON) {
+    return new Move(JSON.r, JSON.c, JSON._isHoriz);
+  }
 }
 
 function deepFreeze(object) {
@@ -284,4 +313,24 @@ function deepFreeze(object) {
     }
   }
   return Object.freeze(object);
+}
+
+export function loadTaggedChainsFromJSON(filepath) {
+  const JSON = require(filepath);
+  // Add prototypes to reconstitute Moves and TaggedChains
+  return JSON.map(chainArray => 
+    chainArray.map(chain => {
+      const movesObj = { moves: chain.moves.map(moveJSON => Move.fromJSON(moveJSON)) };
+      return Object.assign(new TaggedChain, chain, movesObj);
+    })
+  );
+}
+
+export function loadSquareGridFromJSON(filepath) {
+  // Creates an array of SquareGrids to use for testing from a final
+  // SquareGrid gamestate saved as JSON
+  const JSON = require(filepath);
+  const moves = JSON.moveHistory.map(moveJSON => Move.fromJSON(moveJSON));
+  let currentGrid = new SquareGrid(JSON.nRows, JSON.nColumns);
+  return moves.map(move => currentGrid = currentGrid.update(move));// intentional assn.
 }
