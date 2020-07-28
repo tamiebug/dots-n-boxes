@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {hot} from "react-hot-loader"
 import "./App.css";
 import { Move, SquareGrid } from "./utility.js";
-import { LocalHumanPlayer, WeakAI, RandomPlayer } from "./players.js";
+import { LocalHumanPlayer, TestCasePlayer,BasicAI, WeakAI, RandomPlayer } from "./players.js";
 
 const mEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -388,7 +388,7 @@ class Game extends Component {
 		let player1 = new LocalHumanPlayer(playerName1);
 		let player2;
 		if (playAI) {
-			player2 = new WeakAI("CPU");
+			player2 = new BasicAI("CPU");
 		} else {
 			const playerName2 = prompt("Player 2, please enter your name");
 			player2 = new LocalHumanPlayer(playerName2);
