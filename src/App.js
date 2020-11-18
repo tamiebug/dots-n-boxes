@@ -1,19 +1,15 @@
-import React, {Component} from "react";
-import {hot} from "react-hot-loader"
+import React, { Component } from "react";
+import { hot } from "react-hot-loader"
 import "./App.css";
 import { Move, SquareGrid } from "./utility.js";
-import { LocalHumanPlayer, TestCasePlayer,BasicAI, WeakAI, RandomPlayer } from "./players.js";
+import { LocalHumanPlayer, TestCasePlayer, BasicAI, WeakAI, RandomPlayer } from "./players.js";
 
-const mEvents = Object.freeze({
+const mouseEvents = Object.freeze({
 	DOWN:		Symbol("down"),
 	UP:			Symbol("up"),
 	ENTER:	Symbol("enter"),
 	LEAVE:	Symbol("leave")
 });
-
-const MAX_BOARD_SIZE = 30;
-
-const GameStateContext = React.createContext(new SquareGrid(2,2));
 
 export const mouseTracker = {
 	// We need to know of the current mouse state for some functionalities
@@ -23,218 +19,16 @@ export const mouseTracker = {
 	isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
-class SelectionCircle extends Component {
-	render() {return (
-		<div className="selectedCoordCircle"
-			onMouseDown={() => this.props.handleMouseEvent(mEvents.DOWN)}
-			onMouseUp={() => this.props.handleMouseEvent(mEvents.UP)}
-			onMouseEnter={() => this.props.handleMouseEvent(mEvents.ENTER)}
-			onMouseLeave={() => this.props.handleMouseEvent(mEvents.LEAVE)}
-		/>
-	)}
-}
+const MAX_BOARD_SIZE = 30;
 
-class GameBoardSquare extends Component {
-	static contextType = GameStateContext;
-	render() {
-		let className = "gameBoardSquare";
-		if (this.props.column == (this.context.nColumns - 1)) className += " rightBorder";
-		if (this.props.row == (this.context.nRows - 1)) className += " bottomBorder";
-
-		let squareChildren = [
-			<SelectionCircle key={3}
-				handleMouseEvent={(event) => this.props.handleMouseEvent(
-				event, this.props.row, this.props.column)}
-			/>,
-			<div key={0} className="dot" />
-		];
-
-		if (this.context.hasLineDown(this.props.row, this.props.column)) {
-			squareChildren.push(<div key={4} className="vertLine" />);
-		}
-
-		if (this.context.hasLineToRight(this.props.row, this.props.column)) {
-			squareChildren.push(<div key={5} className="horizLine" />);
-		}
-
-		if (this.props.potentialHorizMove) {
-			squareChildren.push(<div key={6} className="greyedHorizLine" />);
-		}
-
-		if (this.props.potentialVertMove) {
-			squareChildren.push(<div key={7} className="greyedVertLine" />);
-		}
-
-		if (this.props.takenBy) {
-			squareChildren.push(<div key={8} className="boxLabel" align="center"> {this.props.takenBy} </div>);
-		}
-
+const GameStateContext = React.createContext(new SquareGrid(2,2));
+class App extends Component {
+	render(){
 		return (
-			<div className={className} >
-				{squareChildren}
+			<div className="App">
+				<Game />
 			</div>
-		)
-	}
-}
-
-class GameBoardRow extends Component {
-	static contextType = GameStateContext;
-
-	render() {
-		let renderedSquares = [];
-		for (let index = 0; index < this.context.nColumns; index++) {
-			renderedSquares.push(
-			<GameBoardSquare
-				key={index}
-				column={index}
-				row={this.props.row}
-				potentialVertMove={
-					this.props.potentialMove !== null &&
-					this.props.potentialMove.r == this.props.row &&
-					this.props.potentialMove.c == index &&
-					this.props.potentialMove.isVertical()
-				}
-				potentialHorizMove={
-					this.props.potentialMove !== null &&
-					this.props.potentialMove.r == this.props.row &&
-					this.props.potentialMove.c == index &&
-					this.props.potentialMove.isHorizontal()
-				}
-				handleMouseEvent={this.props.handleMouseEvent}
-				takenBy={this.props.ownershipGridRow[index]}
-			/>)
-		}
-	return (
-		<div key={this.props.row} className="gameBoardRow" >
-			{renderedSquares}
-		</div>
-	)}
-}
-
-class GameBoard extends Component {
-	static contextType = GameStateContext;
-
-	constructor(props) {
-		super(props);
-		this.state = {
-			selectedCoord: null,
-			potentialMove: null
-		};
-	}
-
-	handleMouseEvent(event, row, column){
-		if (this.state.selectedCoord == null) {
-			switch(event) {
-				case mEvents.DOWN:
-					this.highlightDot(row, column);
-					this.setState({selectedCoord : {"column": column, "row": row}});
-					break;
-				case mEvents.UP:
-					break;
-				case mEvents.ENTER:
-					this.highlightDot(row, column);
-					break;
-				case mEvents.LEAVE:
-					this.unHighlightDot(row, column);
-					break;
-			}
-		} else {
-			const selRow = this.state.selectedCoord.row;
-			const selColumn = this.state.selectedCoord.column;
-
-			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
-			switch(event) {
-				case mEvents.DOWN:
-					this.unHighlightPossibleMove();
-					this.setState({selectedCoord : {"column": column, "row": row}});
-					break;
-				case mEvents.UP:
-					if (isAdjacent) {
-						this.makeMove(row, column);
-						this.unHighlightPossibleMove();
-					}
-					this.setState({selectedCoord : null});
-					break;
-				case mEvents.ENTER:
-					if (!mouseTracker.isMouseButtonDown()) {
-						// happens when mouse is released outside of a selection circle
-						this.setState({selectedCoord : null});
-						break;
-					}
-					this.highlightDot(row, column);
-					if (isAdjacent) {
-						this.highlightPossibleMove(row, column);
-					}
-					break;
-				case mEvents.LEAVE:
-					if (isAdjacent) {
-						this.unHighlightPossibleMove();
-					}
-					if (selRow != row || selColumn != column) {
-						this.unHighlightDot(row, column);
-					}
-				break;
-			}
-		}
-	}
-
-	render() {
-		const boardSize = Math.min(this.context.nColumns, this.context.nRows);
-		const renderedRows = this.context.squares.map((squareRow, index) => {
-			return (<GameBoardRow
-				key={index}
-				row={index}
-				potentialMove={this.state.potentialMove}
-				handleMouseEvent={this.handleMouseEvent.bind(this)}
-				ownershipGridRow={this.props.ownershipGrid[index]}
-			/>)});
-		return (
-			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}>
-				{renderedRows}
-			</div>
-	)}
-
-	makeMove(row, column) {
-		const moveCoords = {
-			"row": Math.min(row, this.state.selectedCoord.row),
-			"column": Math.min(column, this.state.selectedCoord.column)
-		};
-		const isHorizontal = isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column});
-		const move = new Move(moveCoords.row, moveCoords.column, isHorizontal ? "h" : "v");
-		if (this.context.isMovePossible(move)) {
-			this.props.onGameMove(move);
-		}
-		return;
-	}
-
-	highlightPossibleMove(row, column) {
-		const possibleMoveCoords = {
-			"row": Math.min(row, this.state.selectedCoord.row),
-			"column": Math.min(column, this.state.selectedCoord.column)
-		};
-		if (isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column})) {
-			this.setState({potentialMove:
-				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "h")});
-		} else {
-			this.setState({potentialMove:
-				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "v")});
-		}
-		return;
-	}
-
-	unHighlightPossibleMove() {
-		this.setState({potentialMove: null});
-		return;
-	}
-
-	highlightDot(row, column) {
-		//TODO: Implement highlightDot & unHighlightDot
-		return;
-	}
-
-	unHighlightDot(row, column) {
-		//TODO: Implement highlightDot & unHighlightDot
-		return;
+		);
 	}
 }
 
@@ -245,9 +39,9 @@ class Game extends Component {
 			players: [],
 			currentPlayer: 1,
 			matchNumber: 0,
-			squareGrid: new SquareGrid(2,2),
-			ownershipGrid: createEmptyBoard(2,2),
-			localMoveCallback: null
+			gameBoardState: null,
+			ownershipGrid: null,
+			localGameBoardInputCallback: null
 		};
 	}
 
@@ -265,12 +59,12 @@ class Game extends Component {
 			<div>
 				<h1>{player1._name}[{player1.score}] vs {player2._name}[{player2.score}]</h1>
 				<h2>Current player is {this.state.players[this.state.currentPlayer]._name}</h2>
-				<GameStateContext.Provider value={this.state.squareGrid}>
+				<GameStateContext.Provider value={this.state.gameBoardState}>
 					<GameBoard
 						key={this.state.matchNumber}
-						onGameMove={this.onGameMove.bind(this)}
+						onValidGameMove={this.onValidGameMove.bind(this)}
 						currentPlayerInitials={this.currentPlayerInitials.bind(this)}
-						ownershipGrid={this.state.ownershipGrid}
+						ownershipGrid={this.state.ownershipGrid.board}
 					/>
 				</GameStateContext.Provider>
 				<div style={{padding: "4em"}}>
@@ -281,27 +75,27 @@ class Game extends Component {
 		);
 	}
 
-	onGameMove(move) {
-		if (this.state.localMoveCallback) {
-			this.state.localMoveCallback(move);
+	onValidGameMove(move) {
+		if (this.state.localGameBoardInputCallback) {
+			this.state.localGameBoardInputCallback(move);
 		}
 	}
 
 	nextTurn() {
 		
-		const moveCompletedCallback = (move) => {
+		const moveAttemptCallback = (move) => {
 			this.setState((state) => {
 				const currPlayer = state.players[state.currentPlayer];
 				const newState = {};
 
-				if (!state.squareGrid.isMovePossible(move)) {
+				if (!state.gameBoardState.isMovePossible(move)) {
 					new Error("nextTurn(), player " + currPlayer.name +
 						"emitted invalid move " + move.toString());
 				}
-				newState.squareGrid = state.squareGrid.update(move);
+				newState.gameBoardState = state.gameBoardState.update(move);
 				
-				const boxesCompleted = state.squareGrid.boxesCompletedBy(move);	
-				newState.ownershipGrid = updateMatrixState(state.ownershipGrid, 
+				const boxesCompleted = state.gameBoardState.boxesCompletedBy(move);	
+				newState.ownershipGrid = state.ownershipGrid.update(
 					boxesCompleted.map(box => ({
 						value: this.currentPlayerInitials(state),
 						row: box[0],
@@ -320,16 +114,25 @@ class Game extends Component {
 		};
 
 		this.setState(state => ({
-			localMoveCallback: state.players[state.currentPlayer].nextMove(
-				this.state.squareGrid, moveCompletedCallback)
+			localGameBoardInputCallback: state.players[state.currentPlayer].updatePlayerState(
+				this.state.gameBoardState, moveAttemptCallback)
 		}), () => {
 			// TODO:  Make it so that the last move is rendered before the game is stopped.
 			// For some reason the move is rendered if you debugger pause, but not during normal execution.
-			if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.squareGrid.nRows - 1) * (this.state.squareGrid.nColumns - 1))) {
+			/*
+			if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
 				this.determineWinner();
-			}
+			}*/
 			this.state.players[this.state.currentPlayer].generateNextMove();
 		});
+	}
+
+	componentDidUpdate() {
+		// TODO: this is being triggered before the children are being fully rendered -- I want this only to trigger once they have been...
+
+		if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
+			this.determineWinner();
+		}
 	}
 
 	removeLastMove() {
@@ -342,12 +145,12 @@ class Game extends Component {
 				return;
 			}		
 
-			const lastMove = state.squareGrid.returnLastMove();
+			const lastMove = state.gameBoardState.returnLastMove();
 			if (lastMove === null) return;
-			newState.squareGrid = state.squareGrid.remove(lastMove);
+			newState.gameBoardState = state.gameBoardState.remove(lastMove);
 
-			const boxesCompleted = state.squareGrid.boxesCompletedBy(lastMove);
-			newState.ownershipGrid = updateMatrixState(state.ownershipGrid,
+			const boxesCompleted = state.gameBoardState.boxesCompletedBy(lastMove);
+			newState.ownershipGrid = state.ownershipGrid.update(
 				boxesCompleted.map(box => ({
 					value: null,
 					row: box[0],
@@ -406,8 +209,8 @@ class Game extends Component {
 		this.setState({
 			players: [player1, player2],
 			currentPlayer: 0,
-			squareGrid: new SquareGrid(boardSize, boardSize),
-			ownershipGrid: createEmptyBoard(boardSize, boardSize),
+			gameBoardState: new SquareGrid(boardSize, boardSize),
+			ownershipGrid: new OwnershipGrid(boardSize, boardSize),
 		}, () => this.nextTurn());
 	}
 
@@ -427,37 +230,263 @@ class Game extends Component {
 	}
 }
 
-class App extends Component {
-	render(){
+class GameBoard extends Component {
+	static contextType = GameStateContext;
+
+	constructor(props) {
+		super(props);
+		this.state = {
+			selectedCoord: null,
+			highlightedPotentialMove: null
+		};
+	}
+
+	handleMouseEvent(event, row, column){
+		if (this.state.selectedCoord == null) {
+			switch(event) {
+				case mouseEvents.DOWN:
+					this.highlightDot(row, column);
+					this.setState({selectedCoord : {"column": column, "row": row}});
+					break;
+				case mouseEvents.UP:
+					break;
+				case mouseEvents.ENTER:
+					this.highlightDot(row, column);
+					break;
+				case mouseEvents.LEAVE:
+					this.unHighlightDot(row, column);
+					break;
+			}
+		} else {
+			const selRow = this.state.selectedCoord.row;
+			const selColumn = this.state.selectedCoord.column;
+
+			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
+			switch(event) {
+				case mouseEvents.DOWN:
+					this.unHighlightPossibleMove();
+					this.setState({selectedCoord : {"column": column, "row": row}});
+					break;
+				case mouseEvents.UP:
+					if (isAdjacent) {
+						this.attemptMove(row, column);
+						this.unHighlightPossibleMove();
+					}
+					this.setState({selectedCoord : null});
+					break;
+				case mouseEvents.ENTER:
+					if (!mouseTracker.isMouseButtonDown()) {
+						// happens when mouse is released outside of a selection circle
+						this.setState({selectedCoord : null});
+						break;
+					}
+					this.highlightDot(row, column);
+					if (isAdjacent) {
+						this.highlightPossibleMove(row, column);
+					}
+					break;
+				case mouseEvents.LEAVE:
+					if (isAdjacent) {
+						this.unHighlightPossibleMove();
+					}
+					if (selRow != row || selColumn != column) {
+						this.unHighlightDot(row, column);
+					}
+				break;
+			}
+		}
+	}
+
+	render() {
+		const gameBoardState = this.context;
+
+		const boardSize = Math.min(gameBoardState.nColumns, gameBoardState.nRows);
+		const renderedRows = gameBoardState.squares.map((squareRow, index) => {
+			return (<GameBoardRow
+				key={index}
+				row={index}
+				highlightedPotentialMove={this.state.highlightedPotentialMove}
+				handleMouseEvent={this.handleMouseEvent.bind(this)}
+				ownershipGridRow={this.props.ownershipGrid[index]}
+			/>)});
 		return (
-			<div className="App">
-				<Game />
+			<div className="gameBoard" style={{fontSize : determineScalingFactor(boardSize)}}>
+				{renderedRows}
 			</div>
-		);
+	)}
+
+	attemptMove(row, column) {
+		const gameBoardState = this.context;
+		const moveCoords = {
+			"row": Math.min(row, this.state.selectedCoord.row),
+			"column": Math.min(column, this.state.selectedCoord.column)
+		};
+		const isHorizontal = isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column});
+		const move = new Move(moveCoords.row, moveCoords.column, isHorizontal ? "h" : "v");
+		if (gameBoardState.isMovePossible(move)) {
+			this.props.onValidGameMove(move);
+		}
+		return;
+	}
+
+	highlightPossibleMove(row, column) {
+		const possibleMoveCoords = {
+			"row": Math.min(row, this.state.selectedCoord.row),
+			"column": Math.min(column, this.state.selectedCoord.column)
+		};
+		if (isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column})) {
+			this.setState({highlightedPotentialMove:
+				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "h")});
+		} else {
+			this.setState({highlightedPotentialMove:
+				new Move(possibleMoveCoords.row, possibleMoveCoords.column, "v")});
+		}
+		return;
+	}
+
+	unHighlightPossibleMove() {
+		this.setState({highlightedPotentialMove: null});
+		return;
+	}
+
+	highlightDot(row, column) {
+		//TODO: Implement highlightDot & unHighlightDot
+		return;
+	}
+
+	unHighlightDot(row, column) {
+		//TODO: Implement highlightDot & unHighlightDot
+		return;
 	}
 }
 
-function updateMatrixState(matrix, valuesWithCoordinates) {
-		// Map through rows and columns to find desired element location to mutate
-		if (valuesWithCoordinates.length == 0) return matrix;
-		return matrix.map((matrixRow, r) => 
-			matrixRow.map((matrixElement, c) => {
-				for (const v of valuesWithCoordinates) {
-					if (v.column == c && v.row == r) return v.value;
+class GameBoardRow extends Component {
+	static contextType = GameStateContext;
+
+	render() {
+		const gameBoardState = this.context;
+		let renderedSquares = [];
+		for (let index = 0; index < gameBoardState.nColumns; index++) {
+			renderedSquares.push(
+			<GameBoardSquare
+				key={index}
+				column={index}
+				row={this.props.row}
+				highlightPotentialVertMove={
+					this.props.highlightedPotentialMove !== null &&
+					this.props.highlightedPotentialMove.r == this.props.row &&
+					this.props.highlightedPotentialMove.c == index &&
+					this.props.highlightedPotentialMove.isVertical()
 				}
-				return matrixElement;
-			})
-		);
+				highlightPotentialHorizMove={
+					this.props.highlightedPotentialMove !== null &&
+					this.props.highlightedPotentialMove.r == this.props.row &&
+					this.props.highlightedPotentialMove.c == index &&
+					this.props.highlightedPotentialMove.isHorizontal()
+				}
+				handleMouseEvent={this.props.handleMouseEvent}
+				owningPlayerInitials={this.props.ownershipGridRow[index]}
+			/>)
+		}
+	return (
+		<div key={this.props.row} className="gameBoardRow" >
+			{renderedSquares}
+		</div>
+	)}
+}
+
+class GameBoardSquare extends Component {
+	static contextType = GameStateContext;
+	render() {
+		const gameBoardState = this.context;
+
+		let className = "gameBoardSquare";
+		const squareIsLastInRow = this.props.column == (gameBoardState.nColumns - 1);
+		const squareIsLastInColumn = this.props.row == (gameBoardState.nRows - 1);
+
+		if (squareIsLastInRow) className += " rightBorder";
+		if (squareIsLastInColumn) className += " bottomBorder";
+
+		const children = [
+			<SelectionCircle key={3}
+				handleMouseEvent={(event) => this.props.handleMouseEvent(
+					event, this.props.row, this.props.column)}
+			/>,
+			<div key={0} className="dot" />
+		];
+
+		if (gameBoardState.hasLineDownFrom(this.props.row, this.props.column)) {
+			children.push(<div key={4} className="vertLine" />);
+		}
+
+		if (gameBoardState.hasLineToRightOf(this.props.row, this.props.column)) {
+			children.push(<div key={5} className="horizLine" />);
+		}
+
+		if (this.props.highlightPotentialHorizMove) {
+			children.push(<div key={6} className="greyedHorizLine" />);
+		}
+
+		if (this.props.highlightPotentialVertMove) {
+			children.push(<div key={7} className="greyedVertLine" />);
+		}
+
+		if (this.props.owningPlayerInitials) {
+			children.push(<div key={8} className="boxLabel" align="center"> {this.props.owningPlayerInitials} </div>);
+		}
+
+		return (
+			<div className={className} >
+				{children}
+			</div>
+		)
+	}
+}
+
+class SelectionCircle extends Component {
+	/* Component representing a selectable position on the dots and boxes grid
+	 * Click and enter/leave events used to either trigger a move attempt
+	 * or to highlight a possible move.
+	 */
+	render() {return (
+		<div className="selectedCoordCircle"
+			onMouseDown={() => this.props.handleMouseEvent(mouseEvents.DOWN)}
+			onMouseUp={() => this.props.handleMouseEvent(mouseEvents.UP)}
+			onMouseEnter={() => this.props.handleMouseEvent(mouseEvents.ENTER)}
+			onMouseLeave={() => this.props.handleMouseEvent(mouseEvents.LEAVE)}
+		/>
+	)}
+}
+
+class OwnershipGrid {
+	constructor(rows, columns, _givenBoard) {
+		if (_givenBoard) {
+			this.board = _givenBoard;
+		} else {
+			this.board = [];
+			for (let r = 0; r < rows; r++) {
+				let row = [];
+				for (let c = 0; c < columns; c++) row.push(null);
+				this.board.push(row);
+			}
+		}
 	}
 
-function createEmptyBoard(rows, columns) {
-	let board = [];
-	for (let r = 0; r < rows; r++) {
-		let row = [];
-		for (let c = 0; c < columns; c++) row.push(null);
-		board.push(row);
+	update(valuesWithCoordinates) {
+		// Returns a new OwnershipGrid object on change as to play nice with React state
+		if (valuesWithCoordinates.length == 0) return this;
+		const newBoard = this.board.map((boardRow, r) => {
+				return boardRow.map((boardElement, c) => {
+					for (const v of valuesWithCoordinates) {
+						if (v.column == c && v.row == r)
+							return v.value;
+					}
+					return boardElement;
+				});
+			}
+		);
+		return new OwnershipGrid(null, null, newBoard);
 	}
-	return board;
 }
 
 function isHorizontalLine(firstCoord, secondCoord){

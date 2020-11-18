@@ -7,8 +7,8 @@ export class SquareGrid {
    */
 
   constructor(nRows, nColumns) {
-    this.nRows = nRows;
-    this.nColumns = nColumns;
+    this.nRows = nRows || 2;
+    this.nColumns = nColumns || 2;
     this.squares = [];
     this.moveHistory = [];
     for (let r = 0; r < nRows; r++) {
@@ -150,9 +150,9 @@ export class SquareGrid {
 
   moveCompletesBoxAbove(move) {
     if (move.isHorizontal() &&
-        this.hasLineUp(move.r, move.c) &&
-        this.hasLineToRight(move.r - 1, move.c) &&
-        this.hasLineDown(move.r - 1, move.c + 1)) {
+        this.hasLineUpFrom(move.r, move.c) &&
+        this.hasLineToRightOf(move.r - 1, move.c) &&
+        this.hasLineDownFrom(move.r - 1, move.c + 1)) {
       return true;
     } else {
       return false;
@@ -161,9 +161,9 @@ export class SquareGrid {
 
   moveCompletesBoxBelow(move) {
     if (move.isHorizontal() &&
-        this.hasLineDown(move.r, move.c + 1) &&
-        this.hasLineToLeft(move.r + 1, move.c + 1) &&
-        this.hasLineUp(move.r + 1, move.c)) {
+        this.hasLineDownFrom(move.r, move.c + 1) &&
+        this.hasLineToLeftOf(move.r + 1, move.c + 1) &&
+        this.hasLineUpFrom(move.r + 1, move.c)) {
       return true;
     } else {
       return false;
@@ -172,9 +172,9 @@ export class SquareGrid {
 
   moveCompletesBoxToRight(move) {
     if (move.isVertical() &&
-        this.hasLineToRight(move.r, move.c) &&
-        this.hasLineDown(move.r, move.c + 1) &&
-        this.hasLineToLeft(move.r + 1, move.c + 1)) {
+        this.hasLineToRightOf(move.r, move.c) &&
+        this.hasLineDownFrom(move.r, move.c + 1) &&
+        this.hasLineToLeftOf(move.r + 1, move.c + 1)) {
       return true;
     } else {
       return false;
@@ -183,31 +183,31 @@ export class SquareGrid {
 
   moveCompletesBoxToLeft(move) {
     if (move.isVertical() &&
-        this.hasLineToLeft(move.r, move.c) &&
-        this.hasLineDown(move.r, move.c - 1) &&
-        this.hasLineToRight(move.r + 1, move.c -1)) {
+        this.hasLineToLeftOf(move.r, move.c) &&
+        this.hasLineDownFrom(move.r, move.c - 1) &&
+        this.hasLineToRightOf(move.r + 1, move.c -1)) {
       return true;
     } else {
       return false;
     }
   }
 
-  hasLineToRight(r, c) {
+  hasLineToRightOf(r, c) {
     if (!this.isWithinBounds(r, c)) return false;
     return this.squares[r][c][0];
   }
 
-  hasLineToLeft(r, c) {
+  hasLineToLeftOf(r, c) {
     if(!this.isWithinBounds(r, c-1)) return false;
     return this.squares[r][c-1][0];
   }
 
-  hasLineUp(r, c) {
+  hasLineUpFrom(r, c) {
     if(!this.isWithinBounds(r-1, c)) return false;
     return this.squares[r-1][c][1];
   }
 
-  hasLineDown(r, c) {
+  hasLineDownFrom(r, c) {
     if(!this.isWithinBounds(r, c)) return false;
     return this.squares[r][c][1];
   }
