@@ -82,7 +82,12 @@ class Game extends Component {
 	}
 
 	nextTurn() {
-		
+		if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
+			this.setState({localGameBoardInputCallback: null});
+			this.determineWinner();
+			return;
+		}
+
 		const moveAttemptCallback = (move) => {
 			this.setState((state) => {
 				const currPlayer = state.players[state.currentPlayer];
@@ -117,22 +122,8 @@ class Game extends Component {
 			localGameBoardInputCallback: state.players[state.currentPlayer].updatePlayerState(
 				this.state.gameBoardState, moveAttemptCallback)
 		}), () => {
-			// TODO:  Make it so that the last move is rendered before the game is stopped.
-			// For some reason the move is rendered if you debugger pause, but not during normal execution.
-			/*
-			if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
-				this.determineWinner();
-			}*/
 			this.state.players[this.state.currentPlayer].generateNextMove();
 		});
-	}
-
-	componentDidUpdate() {
-		// TODO: this is being triggered before the children are being fully rendered -- I want this only to trigger once they have been...
-
-		if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
-			this.determineWinner();
-		}
 	}
 
 	removeLastMove() {
@@ -140,10 +131,10 @@ class Game extends Component {
 			const currPlayer = state.players[state.currentPlayer];
 			const newState = {};
 
-			// Only allow move removal for local players.
-			if (!(currPlayer instanceof LocalHumanPlayer)) { 
+			// Only allow move removal for matches between local players (for now)
+			if (state.players[0] instanceof LocalHumanPlayer && state.players[1] instanceof LocalHumanPlayer) { 
 				return;
-			}		
+			}
 
 			const lastMove = state.gameBoardState.returnLastMove();
 			if (lastMove === null) return;
@@ -173,15 +164,19 @@ class Game extends Component {
 
 	determineWinner() {
 		// Assumes only two players for now
+		const alertThenAskToPlayAgain = (text) => {
+			setTimeout(() => {	
+				alert(text);
+				if (confirm("Would you like to play again?")) this.setUpGame();
+			}, 0);
+		};
+		
 		if (this.state.players[0].score == this.state.players[1].score) {
-			alert("The Match was a tie!!");
+			alertThenAskToPlayAgain("The Match was a tie!!");
 		} else if (this.state.players[0].score > this.state.players[1].score) {
-			alert(`${this.state.players[0]._name} is the winner, ${this.state.players[0].score} to ${this.state.players[1].score}!`);
+			alertThenAskToPlayAgain(`${this.state.players[0]._name} is the winner, ${this.state.players[0].score} to ${this.state.players[1].score}!`);
 		} else {
-			alert(`${this.state.players[1]._name} is the winner, ${this.state.players[1].score} to ${this.state.players[0].score}!`);
-		}
-		if (confirm("Would you like to play again?")) {
-			this.setUpGame();
+			alertThenAskToPlayAgain(`${this.state.players[1]._name} is the winner, ${this.state.players[1].score} to ${this.state.players[0].score}!`);
 		}
 	}
 
