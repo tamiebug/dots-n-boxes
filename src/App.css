@@ -1,10 +1,25 @@
-.App {
-	margin: 1rem;
-	font-family: Arial, Helvetica, sans-serif;
+body {
+  background-color: #fbf7ff;
 }
 
-.gameBoard {
-  font-size: 16px;
+#root {
+  display: flex;
+}
+
+.App {
+	margin: 1rem auto;
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-flex;
+}
+
+
+#playerNameDisplay {
+  text-align: center;
+}
+
+.buttons-column {
+  position: absolute;
+  bottom: 0;
 }
 
 .boxLabel {
@@ -21,6 +36,7 @@
   width: 1em;
   height: 1em;
   position: absolute;
+  z-index: 1;
 }
 
 .selectedCoordCircle {
@@ -46,7 +62,7 @@
 
 .horizLine, .vertLine {
   background: red;
-  z-index: -5;
+  z-index: 0;
   position: absolute;
   top: .25em;
   left: .25em;
