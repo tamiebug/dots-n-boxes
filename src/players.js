@@ -248,6 +248,22 @@ export class Player {
     newPlayer.score = this.score + num;
 		return newPlayer;
   }
+
+  getNameInitials() {
+    // We only allow for at most 3 character initials.
+    const initials = this._name
+      .split(" ")
+      .slice(0, 3)
+      .map((subName) => subName.charAt(0))
+      .join("");
+    
+    if (this._name == "CPU") {
+      // TODO: Ideally, we want this to be an AI player class override, not this hacky solution
+      return "CPU";
+    } else {
+      return initials;
+    }
+  }
 }
 
 export class LocalHumanPlayer extends Player {

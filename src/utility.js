@@ -334,3 +334,9 @@ export function loadSquareGridFromJSON(filepath) {
   let currentGrid = new SquareGrid(JSON.nRows, JSON.nColumns);
   return moves.map(move => currentGrid = currentGrid.update(move));// intentional assn.
 }
+
+export function argmax(array) {
+  if (array.length == 0) return -1;
+  const first_maximum = array[array.reduce((i_max, x, i, array) => { x > array[i_max] ? i : i_max }, 0)];
+  return [...array.keys()].filter(i => arr[i] === first_maximum);
+}

@@ -1,9 +1,9 @@
-import React, { Component } from "react";
-import { Move, SquareGrid } from "./utility.js";
-import { LocalHumanPlayer, BasicAI, RandomPlayer, RemotePlayer, WeakAI } from "./players.js";
+import React, { Component, useEffect, useState } from "react";
+import { Move, SquareGrid , argmax} from "./utility.js";
+import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
+import { GameStateContextReducer, gameStateContext } from "./GameContext.js";
 
 const MAX_BOARD_SIZE = 30;
-const GameStateContext = React.createContext(null);
 
 const mouseEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -12,6 +12,7 @@ const mouseEvents = Object.freeze({
 	LEAVE:	Symbol("leave")
 });
 
+// TODO: Does this beelong here?  Seems like something that belongs in App.js and is then passed down to the GameComponent, because it may be used elsewhere.
 export const mouseTracker = {
 	// We need to know of the current mouse state for some functionalities
 	mouseButtonDown : false,
@@ -20,209 +21,50 @@ export const mouseTracker = {
 	isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
-export class Game extends Component {
-		state = {
-			/** Integer.  Current number of match played, starts at zero.  Serves as key for game board component */
-			matchNumber: 0,
-			/** Array[Player].  Currently active players */
-			players: [],
-			/** Player. Current Player */
-			currentPlayer: null,
-			/** SquareGrid.  Contains and manages current game state */
-			gameBoardState: null,
-			/** TODO: Maybe ownershipGrid can be folded into the gameBoardState object? */
-			/** OwnershipGrid.  Contains additional game information: whom owns a given location:  */
-			ownershipGrid: null,
-			/** Function.  Callback used to communicate local actions to Players */
-			localGameBoardInputCallback: null
-		};
+export function Game(props) {	
+	const [gameState, gameStateDispatch] = useReducer(gameStateContextReducer);
 
-	constructor(props) {
-		super(props);
-	}
+	useEffect(() => {
+		gameStateDispatch({type: 'setUpGame', settings: {boardHeight: 5, boardWidth: 5, playerName1: "Tamie", playerName2: "CPU", gameType: "CPU", cpuDifficulty: "weak" }});
+	}, []);
 
-	componentDidMount() {
-		// TODO: For the record, we don't want the game to set itself up.
-		this.setUpGame({boardHeight: 5, boardWidth: 5, playerName1: "CPU", playerName2: "CPU", gameType: "CPU", cpuDifficulty: "weak" });
-	}
+	useEffect(() => {
+		gameState.players[gameState.currentPlayer].endTurn();
 
-
-	render() {
-		if (this.state.players.length < 2) return null;
-
-		return (
-			<div className="row game-div">
-				<div className="col col-sm-auto">
-					<GameStateContext.Provider value={this.state.gameBoardState}>
-						<GameBoard
-							key={this.state.matchNumber}
-							onValidGameMove={this.onValidGameMove.bind(this)}
-							currentPlayerInitials={this.currentPlayerInitials.bind(this)}
-							ownershipGrid={this.state.ownershipGrid.board} />
-					</GameStateContext.Provider>
-				</div>
-			</div>
-		);
-	}
-
-	onValidGameMove(move) {
-		if (this.state.localGameBoardInputCallback) {
-			this.state.localGameBoardInputCallback(move);
-		}
-	}
-
-	nextTurn() {
-		if (this.state.players.length < 2) return;
-		if ((this.state.players[0].score + this.state.players[1].score) == ((this.state.gameBoardState.nRows - 1) * (this.state.gameBoardState.nColumns - 1))) {
-			this.setState({ localGameBoardInputCallback: null });
-			// TODO: I will want this functionality to eventually be hoisted out of t
-			this.determineWinner();
-			return;
-		}
-
-		const moveAttemptCallback = (move) => {
-			this.setState(state => {
-				const currPlayer = state.players[state.currentPlayer];
-				const newState = {};
-
-				if (!state.gameBoardState.isMovePossible(move)) throw `nextTurn(), player ${currPlayer.name} emitted invalid move ${move})`;
-
-				newState.gameBoardState = state.gameBoardState.update(move);
-				
-				const boxesCompleted = state.gameBoardState.boxesCompletedBy(move);
-				newState.ownershipGrid = state.ownershipGrid.update(
-					boxesCompleted.map(box => ({
-						value: this.currentPlayerInitials(state),
-						row: box[0],
-						column: box[1]
-					})
-					)
-				);
-
-				newState.players = state.players.map((player, index) => { return index == state.currentPlayer ? currPlayer.addScore(boxesCompleted.length) : player; });
-
-				// If no boxes were completed, the next player gets to play
-				if (boxesCompleted.length == 0) {
-					newState.currentPlayer = (state.currentPlayer == 0) ? 1 : 0;
-				}
-
-				return newState;
-		
-			}, () => this.nextTurn());
-		};
-
-		this.setState(state => ({
-			localGameBoardInputCallback: state.players[state.currentPlayer].updatePlayerState(
-				this.state.gameBoardState, moveAttemptCallback)
-		}), () => {
-			this.state.players[this.state.currentPlayer].generateNextMove();
-		});
-	}
-
-	removeLastMove() {
-		/* TODO: This will need a refactor */
-		this.setState(state => {
-			const currPlayer = state.players[state.currentPlayer];
-			const newState = {};
-
-			// Only allow move removal for matches between local players (for now)
-			if (state.players[0] instanceof LocalHumanPlayer && state.players[1] instanceof LocalHumanPlayer) {
-				return;
-			}
-
-			const lastMove = state.gameBoardState.returnLastMove();
-			if (lastMove === null)
-				return;
-			newState.gameBoardState = state.gameBoardState.remove(lastMove);
-
-			const boxesCompleted = state.gameBoardState.boxesCompletedBy(lastMove);
-			newState.ownershipGrid = state.ownershipGrid.update(
-				boxesCompleted.map(box => ({
-					value: null,
-					row: box[0],
-					column: box[1]
-				})
-				)
-			);
-
-			newState.players = state.players.map((player, index) => { return index == state.currentPlayer ? currPlayer.addScore(-1 * boxesCompleted.length) : player; });
-
-			if (boxesCompleted.length == 0) {
-				newState.currentPlayer = (state.currentPlayer == 0) ? 1 : 0;
+		const pointsScored = gameState.players.reduce((totalScore, score) => score + totalScore, 0);
+		const maxPointsPossible = (gameState.gameBoardState.nRows - 1) * (gameState.gameBoardState.nColumns - 1)
+		if (pointsScored == maxPointsPossible) {
+			const winners = argmax(gameState.players.map((player) => player.score));
+			if (winners.length == 1) {
+				// TODO: set score support!
+				// Do something... a player won!
+				// Ask if another match is desired
+				// TEMPORARY PLACEHOLDER CODE:
+				setTimeout(() => {
+					alert(`Player ${gameState.players[winners[0]]._name} won the game`)
+				});
 			} else {
-				newState.currentPlayer = state.currentPlayer;
+				// There's a ${winners.length}-way tie!
+				setTimeout(() => {
+					alert(`The set of players ${winners.map((winner) => gameState.players[winner]._name)} have won the game`);j
+				})
 			}
-
-			return newState;
-		}, () => this.nextTurn());
-	}
-
-	determineWinner() {
-		// TODO: Should this be moved out?  [Or, we could refactor this maybe..]
-		// Assumes only two players for now
-		const alertThenAskToPlayAgain = (text) => {
-			setTimeout(() => {
-				alert(text);
-				if (confirm("Would you like to play again?"))
-					this.setUpGame();
-			}, 0);
-		};
-
-		if (this.props.players[0].score == this.props.players[1].score) {
-			alertThenAskToPlayAgain("The Match was a tie!!");
-		} else if (this.props.players[0].score > this.props.players[1].score) {
-			alertThenAskToPlayAgain(`${this.props.players[0]._name} is the winner, ${this.props.players[0].score} to ${this.props.players[1].score}!`);
 		} else {
-			alertThenAskToPlayAgain(`${this.props.players[1]._name} is the winner, ${this.props.players[1].score} to ${this.props.players[0].score}!`);
+			gameState.players[gameState.currentPlayer].startTurn();
 		}
-	}
+	})
 
-	setUpGame(settings) {
-		let player1, player2;
-		switch (settings.gameType) {
-			case "local":
-				player1 = new LocalHumanPlayer(settings.playerName1);
-				player2 = new LocalHumanPlayer(settings.playerName2);
-				break;
-				case "CPU":
-				player1 = new LocalHumanPlayer(settings.playerName1);
-				switch (settings.cpuDifficulty) {
-					case "random":
-						player2 = new RandomPlayer(settings.playerName2);
-						break;
-					case "weak":
-						player2 = new WeakAI(settings.playerName2);
-						break;
-					case "basic":
-						player2 = new BasicAI(settings.playerName2);
-						break;
-					default:
-						new Error(`Incorrect settings.cpuDifficulty value: ${settings.cpuDifficulty}`);
-				}
-				break;
-			default:
-				new Error(`incorrect settings.gameType value: ${settings.gameType}`);
-		}
-
-		this.setState({
-			players: [player1, player2],
-			currentPlayer: 0,
-			gameBoardState: new SquareGrid(settings.boardWidth, settings.boardHeight),
-			ownershipGrid: new OwnershipGrid(settings.boardWidth, settings.boardHeight),
-		}, () => this.nextTurn());
-	}
-
-	currentPlayerInitials(state) {
-		// TODO: handle multiple part names with up to three initials
-		// e.g. Hillary Rodham Clinton -> HRC
-		const name = state.players[state.currentPlayer]._name;
-		//TODO: change this quick hacky fix to something more permanent
-		if (name == "CPU") {
-			return "CPU";
-		} else {
-			return name.charAt(0);
-		}
-	}
+	return (
+		<div className="row game-div">
+			<div className="col col-sm-auto">
+				<GameStateContext.Provider value={{gameState, gameStateDispatch}}>
+					<GameBoard
+						key={gameState.matchNumber}
+					/>
+				</GameStateContext.Provider>
+			</div>
+		</div>
+	);
 }
 
 class GameBoard extends Component {
@@ -308,7 +150,7 @@ class GameBoard extends Component {
 				{renderedRows}
 			</div>
 		);
-	}
+	}(move) 
 
 	attemptMove(row, column) {
 		const gameBoardState = this.context;
@@ -319,6 +161,7 @@ class GameBoard extends Component {
 		);
 
 		if (gameBoardState.isMovePossible(move))  this.props.onValidGameMove(move);		
+		w t
 		return;
 	}
 
