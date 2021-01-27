@@ -1,6 +1,6 @@
 import { createContext } from "react";
-import { Move, SquareGrid } from "./utility.js";
-import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI} from "./players.js";
+import { Move, SquareGrid , OwnershipGrid } from "./utility.js";
+import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
 
 // Useful constants extracted here for easy changing
 const NUMBER_PLAYERS = 2;
@@ -9,49 +9,43 @@ const ALLOWED_GAME_TYPES = ['CPU', 'local'];
 const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 
 export const GameStateContext = createContext({
-	'gameActive': false,
 	'matchNumber': 0,
-	'incrementMatchNumber': () => {},
 	'players': [],
-	'setPlayers': (players) => {},
 	'currentPlayer': null,
-	'switchCurrentPlayer': () => {},
 	'gameBoardState': null,
-	'setGameBoardState': (squareGrid) =>  {},
 	'ownershipGrid': null,
-	'setOwnershipGrid': (ownershipGrid) => {},
-	'setUpGame': (settings) => {}
 });
 
 export const gameStateContextReducer = function(state, action) {
+	const { matchNumber, players, currentPlayer, gameBoardState, ownershipGrid } = state;
 	switch(action.type) {
 		// Meant for gameStateContextReducer internal code reuse puposes only
 		case '__runBatchedActions':
 			validateAction(action, [{ key: 'batchedActions', instanceOf: Array }]);
 			return action.batchedActions.reduce(gameStateContextReducer, {...state});
 		case 'incrementMatchNumber':
-			return {...state, 'matchNumber': state.matchNumber + 1};
+			return {...state, 'matchNumber': matchNumber + 1};
 		case 'addScore':
 			validateAction(action, [{ key: 'player', instanceOf: Number }, { key: 'points', instanceOf: Number}]);
-			if (action.player > state.players.length || action.player < 0) throw `gameStateContextReducer dispatch failure: 'incrementScore' called on player ${action.player}`;
-			return {...state, 'players': state.players.map((_player, index) => { 
+			if (action.player > players.length || action.player < 0) throw `gameStateContextReducer dispatch failure: 'incrementScore' called on player ${action.player}`;
+			return {...state, 'players': players.map((_player, index) => { 
 				return (index == action.player) ? _player.addScore(action.points) : _player
 			})};
 		case 'attemptMove':
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'move', instanceOf: Move }]);
-			if (!state.gameBoardState.isMovePossible(action.move)) throw `gameStateContextReducer dispatch failure:  'attemptMove' was called on invalid move ${action.move}`;
-			if (state.players[state.currentPlayer] !== action.player) throw `gameStateContextReducer dispatch failed: 'attemptMove' was called on by player ${action.player} during opponent's turn`;
+			if (!gameBoardState.isMovePossible(action.move)) throw `gameStateContextReducer dispatch failure:  'attemptMove' was called on invalid move ${action.move}`;
+			if (players[currentPlayer] !== action.player) throw `gameStateContextReducer dispatch failed: 'attemptMove' was called on by player ${action.player} during opponent's turn`;
 
-			const boxesCompletedByMove = state.gameBoardState.boxesCompletedBy(move);
+			const boxesCompletedByMove = gameBoardState.boxesCompletedBy(move);
 			return {
-				'boardState': state.gameBoardState.update(move),
-				'ownershipGrid': state.ownershipGrid.update(
+				'boardState': gameBoardState.update(move),
+				'ownershipGrid': ownershipGrid.update(
 					boxesCompletedByMove.map(box => ({
 						'value': player.getNameInitials(),
 						'row': box[0],
 						'column': box[1]}))),
-				'players': state.players.map((player, index) => { return index == state.currentPlayer ? state.players[state.currentPlayer].addScore(boxesCompleted.length) : player; }),
-				'currentPlayer': (state.currentPlayer + ((boxesCompleted.length == 0) ? 0 : 1)) % NUMBER_PLAYERS
+				'players': players.map((player, index) => { return index == currentPlayer ? players[currentPlayer].addScore(boxesCompleted.length) : player; }),
+				'currentPlayer': (currentPlayer + ((boxesCompleted.length == 0) ? 0 : 1)) % NUMBER_PLAYERS
 			}
 		case 'attemptMoveTakeback':
 			validateAction(action, [{ key: 'player', typeOf: 'number' }]);

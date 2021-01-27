@@ -232,6 +232,10 @@ export class SquareGrid {
   isMovePossible(move) {
     return this.isMoveWithinBounds(move) && !this.hasMoveBeenDone(move);
   }
+
+  getDimensions() {
+    return { 'rows': this.nRows, 'columns': this.nColumns };
+  }
 }
 
 export class Move {
@@ -300,6 +304,39 @@ export class Move {
   }
 }
 
+export class OwnershipGrid {
+	constructor(rows, columns, _givenBoard) {
+		if (_givenBoard) {
+			this.board = _givenBoard;
+		} else {
+			this.board = [];
+			for (let r = 0; r < rows; r++) {
+				let row = [];
+				for (let c = 0; c < columns; c++)
+					row.push(null);
+				this.board.push(row);
+			}
+		}
+  }
+
+  update(valuesWithCoordinates) {
+		// Returns a new OwnershipGrid object on change as to play nice with React state
+		if (valuesWithCoordinates.length == 0)
+			return this;
+		const newBoard = this.board.map((boardRow, r) => {
+			return boardRow.map((boardElement, c) => {
+				for (const v of valuesWithCoordinates) {
+					if (v.column == c && v.row == r)
+						return v.value;
+				}
+				return boardElement;
+			});
+		}
+		);
+		return new OwnershipGrid(null, null, newBoard);
+	}
+}
+  
 function deepFreeze(object) {
   /* Take caution when using -- there can be no cyclical references within
    * object to be frozen, and no objects within the chain of freezing that

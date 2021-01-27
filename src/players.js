@@ -131,7 +131,7 @@ function groupMovesIntoTaggedChains(currentState, squareCompleters, squareComple
     ...squareCompletionMakers.map(move => ({move: move, isCompleter: false, hasBeenConsumed: false}))
   ];
 
-  const len = taggedMoves.length;
+  const len = taggedMoves.lengthc;
   for (let i = 0; i < len; i++) {
     if (taggedMoves[i].hasBeenConsumed) continue;
     taggedMoves[i].hasBeenConsumed = true;
@@ -184,7 +184,6 @@ export class Player {
    */
   constructor(name) {
     this._name = name;
-    this.onLocalMoveAttempt = this.onLocalMoveAttempt;
     this._moveCompleteCallback = null;
     this._currentState = null;
     this.score = 0;
@@ -243,7 +242,7 @@ export class Player {
   }
 
   addScore(num) {
-		// addScore returns a modified Player object
+		// addScore returns a new modified Player object
 		const newPlayer = new this.constructor(this._name);
     newPlayer.score = this.score + num;
 		return newPlayer;

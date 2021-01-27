@@ -1,7 +1,6 @@
-import React, { Component, useEffect, useState } from "react";
-import { Move, SquareGrid , argmax} from "./utility.js";
-import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
-import { GameStateContextReducer, gameStateContext } from "./GameContext.js";
+import React, { useEffect, useState } from "react";
+import { Move, argmax } from "./utility.js";
+import { gameStateContextReducer, gameStateContext } from "./GameContext.js";
 
 const MAX_BOARD_SIZE = 30;
 
@@ -12,7 +11,7 @@ const mouseEvents = Object.freeze({
 	LEAVE:	Symbol("leave")
 });
 
-// TODO: Does this beelong here?  Seems like something that belongs in App.js and is then passed down to the GameComponent, because it may be used elsewhere.
+// TODO: Does this belong here?  Seems like something that belongs in App.js and is then passed down to the GameComponent, because it may be used elsewhere.
 export const mouseTracker = {
 	// We need to know of the current mouse state for some functionalities
 	mouseButtonDown : false,
@@ -21,45 +20,51 @@ export const mouseTracker = {
 	isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
-export function Game(props) {	
-	const [gameState, gameStateDispatch] = useReducer(gameStateContextReducer);
+export function Game() {	
+	const [ gameState, gameStateDispatch ] = useReducer(gameStateContextReducer);
+	const { players, currentPlayer, gameBoardState } = gameState;
 
 	useEffect(() => {
 		gameStateDispatch({type: 'setUpGame', settings: {boardHeight: 5, boardWidth: 5, playerName1: "Tamie", playerName2: "CPU", gameType: "CPU", cpuDifficulty: "weak" }});
 	}, []);
 
 	useEffect(() => {
-		gameState.players[gameState.currentPlayer].endTurn();
+		players[currentPlayer].endTurn();
 
-		const pointsScored = gameState.players.reduce((totalScore, score) => score + totalScore, 0);
-		const maxPointsPossible = (gameState.gameBoardState.nRows - 1) * (gameState.gameBoardState.nColumns - 1)
+		const pointsScored = players.reduce((totalScore, score) => score + totalScore, 0);
+		const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1)
 		if (pointsScored == maxPointsPossible) {
-			const winners = argmax(gameState.players.map((player) => player.score));
+			const winners = argmax(players.map((player) => player.score));
 			if (winners.length == 1) {
 				// TODO: set score support!
 				// Do something... a player won!
 				// Ask if another match is desired
 				// TEMPORARY PLACEHOLDER CODE:
 				setTimeout(() => {
-					alert(`Player ${gameState.players[winners[0]]._name} won the game`)
+					alert(`Player ${players[winners[0]]._name} won the game`)
 				});
 			} else {
 				// There's a ${winners.length}-way tie!
 				setTimeout(() => {
-					alert(`The set of players ${winners.map((winner) => gameState.players[winner]._name)} have won the game`);j
+					alert(`The set of players ${winners.map((winner) => players[winner]._name)} have won the game`);j
 				})
 			}
 		} else {
-			gameState.players[gameState.currentPlayer].startTurn();
+			players[currentPlayer].startTurn();
 		}
-	})
+	}, [ gameBoardState ])
+
+	/* Precaution to avoid unneeded renders in child components on parent component rerender */
+	const contextValue = useMemo(() => {
+		return { gameState, gameStateDispatch };
+	}, [gameState, gameStateDispatch]);
 
 	return (
 		<div className="row game-div">
 			<div className="col col-sm-auto">
-				<GameStateContext.Provider value={{gameState, gameStateDispatch}}>
+				<GameStateContext.Provider value={contextValue}>
 					<GameBoard
-						key={gameState.matchNumber}
+						key={ gameState.matchNumber }
 					/>
 				</GameStateContext.Provider>
 			</div>
@@ -67,224 +72,216 @@ export function Game(props) {
 	);
 }
 
-class GameBoard extends Component {
-	static contextType = GameStateContext;
+function GameBoard() {
+	const [ selectedCoordinate, setSelectedCoordinate ] = useState(null);
+	const [ highlightedPotentialMove, setHighlightedPotentialMove ] = useState(null);
+	const { gameState } = useContext(gameStateContext);
+	const { players, gameBoardState } = gameState;
 
-		state = {
-			/** Object.  The selected coordinate. */
-			selectedCoord: null,
-			/** Move.  Highlighted next potential move, usually showed on mouseover. */
-			highlightedPotentialMove: null
-		};
-
-	handleMouseEvent(event, row, column) {
-		if (this.state.selectedCoord == null) {
-			switch (event) {
-				case mouseEvents.DOWN:
-					this.highlightDot(row, column);
-					this.setState({ selectedCoord: { "column": column, "row": row } });
-					break;
-				case mouseEvents.UP:
-					break;
-				case mouseEvents.ENTER:
-					this.highlightDot(row, column);
-					break;
-				case mouseEvents.LEAVE:
-					this.unHighlightDot(row, column);
-					break;
-			}
-		} else {
-			const selRow = this.state.selectedCoord.row;
-			const selColumn = this.state.selectedCoord.column;
-
-			const isAdjacent = ((Math.abs(selColumn - column) + Math.abs(selRow - row)) == 1);
-			switch (event) {
-				case mouseEvents.DOWN:
-					this.unHighlightPossibleMove();
-					this.setState({ selectedCoord: { "column": column, "row": row } });
-					break;
-				case mouseEvents.UP:
-					if (isAdjacent) {
-						this.attemptMove(row, column);
-						this.unHighlightPossibleMove();
-					}
-					this.setState({ selectedCoord: null });
-					break;
-				case mouseEvents.ENTER:
-					if (!mouseTracker.isMouseButtonDown()) {
-						// happens when mouse is released outside of a selection circle
-						this.setState({ selectedCoord: null });
-						break;
-					}
-					this.highlightDot(row, column);
-					if (isAdjacent) {
-						this.highlightPossibleMove(row, column);
-					}
-					break;
-				case mouseEvents.LEAVE:
-					if (isAdjacent) {
-						this.unHighlightPossibleMove();
-					}
-					if (selRow != row || selColumn != column) {
-						this.unHighlightDot(row, column);
-					}
-					break;
-			}
-		}
-	}
-
-	render() {
-		const gameBoardState = this.context;
-
-		const boardSize = Math.min(gameBoardState.nColumns, gameBoardState.nRows);
-		const renderedRows = gameBoardState.squares.map((squareRow, index) => {
+	function render() {
+		const boardSize = Math.max(...gameBoardState.getDimensions.values())
+		const renderedRows = gameBoardState.map((_, index) => {
 			return (<GameBoardRow
 				key={index}
 				row={index}
-				highlightedPotentialMove={this.state.highlightedPotentialMove}
-				handleMouseEvent={this.handleMouseEvent.bind(this)}
-				ownershipGridRow={this.props.ownershipGrid[index]} />);
+				highlightedPotentialMove={highlightedPotentialMove}
+				handleMouseEvent={(...args) => handleMouseEvent(...args)}
+			/>);
 		});
 		return (
 			<div className="gameBoard jumbotron" style={{ fontSize: determineScalingFactor(boardSize) }}>
 				{renderedRows}
 			</div>
 		);
-	}(move) 
+	}
 
-	attemptMove(row, column) {
-		const gameBoardState = this.context;
+	function handleMouseEvent(event, row, column) {
+		if (selectedCoordinate == null) {
+			switch (event) {
+				case mouseEvents.DOWN:
+					highlightDot(row, column);
+					setSelectedCoordinate({ row, column });
+					break;
+				case mouseEvents.UP:
+					break;
+				case mouseEvents.ENTER:
+					highlightDot(row, column);
+					break;
+				case mouseEvents.LEAVE:
+					unHighlightDot(row, column);
+					break;
+			}
+		} else {
+			const {'row': selectedRow, 'column': selectedColumn} = selectedCoordinate;
+			const isAdjacent = ((Math.abs(selectedColumn - column) + Math.abs(selectedRow - row)) == 1);
+			switch (event) {
+				case mouseEvents.DOWN:
+					unHighlightPossibleMove();
+					setSelectedCoordinate({ row, column });
+					break;
+				case mouseEvents.UP:
+					if (isAdjacent) {
+						attemptMove(row, column);
+						unHighlightPossibleMove();
+					}
+					setSelectedCoordinate(null);	
+					break;
+				case mouseEvents.ENTER:
+					if (!mouseTracker.isMouseButtonDown()) {
+						// happens when mouse is released outside of a selection circle
+						setSelectedCoordinate(null);
+						break;
+					}
+					this.highlightDot(row, column);
+					if (isAdjacent) {
+						highlightPossibleMove(row, column);
+					}
+					break;
+				case mouseEvents.LEAVE:
+					if (isAdjacent) {
+						unHighlightPossibleMove();
+					}
+					if (selectedRow != row || selectedColumn != column) {
+						unHighlightDot(row, column);
+					}
+					break;
+			}
+		}
+	}
+	
+	function attemptMove(row, column) {
 		const move = new Move(
-			Math.min(row, this.state.selectedCoord.row),
-			Math.min(column, this.state.selectedCoord.column),
-			isHorizontalLine(this.state.selectedCoord, { "row": row, "column": column }) ? "h" : "v"
+			Math.min(row, selectedCoordinate.row),
+			Math.min(column, selectedCoordinate.column),
+			isHorizontalLine(selectedCoordinate, { row, column }) ? "h" : "v"
 		);
 
-		if (gameBoardState.isMovePossible(move))  this.props.onValidGameMove(move);		
-		w t
-		return;
+		if (gameBoardState.isMovePossible(move))  {
+			players.forEach((player) => player.onLocalMoveAttempt(move));
+		}
 	}
 
-	highlightPossibleMove(row, column) {
+	function highlightPossibleMove(row, column) {
 		const move = new Move (
-			Math.min(row, this.state.selectedCoord.row),
-			Math.min(column, this.state.selectedCoord.column),
-			isHorizontalLine(this.state.selectedCoord, {"row": row, "column": column}) ? "h" : "v"
+			Math.min(row, selectedCoordinate.row),
+			Math.min(column, selectedCoordinate.column),
+			isHorizontalLine(selectedCoordinate, { row, column }) ? "h" : "v"
 		);
-		this.setState({ highlightedPotentialMove: move});
+		setHighlightedPotentialMove(move);
 		return;
 	}
 
-	unHighlightPossibleMove() {
-		this.setState({ highlightedPotentialMove: null });
+	function unHighlightPossibleMove() {
+		setHighlightedPotentialMove(null);
 		return;
 	}
 
-	highlightDot(row, column) {
+	function highlightDot(row, column) {
 		//TODO: Implement highlightDot & unHighlightDot
 		return;
 	}
 
-	unHighlightDot(row, column) {
+	function unHighlightDot(row, column) {
 		//TODO: Implement highlightDot & unHighlightDot
 		return;
 	}
+
+	// TODO: Maybe reorganize so that we don't just call render at the end?
+	// Potentially, this component deserves its own reducer?  Or maybe
+	// we can factor out some functions?  We'll see.
+	return render();
 }
 
-class GameBoardRow extends Component {
-	static contextType = GameStateContext;
+function GameBoardRow(props) {
+	const [ gameState, ] = useContext(gameStateContext);
+	const { gameBoardState } = gameState;
 
-	render() {
-		const gameBoardState = this.context;
-		let renderedSquares = [];
-		for (let index = 0; index < gameBoardState.nColumns; index++) {
-			renderedSquares.push(
-				<GameBoardSquare
-					key={index}
-					column={index}
-					row={this.props.row}
-					highlightPotentialVertMove={this.props.highlightedPotentialMove !== null &&
-						this.props.highlightedPotentialMove.r == this.props.row &&
-						this.props.highlightedPotentialMove.c == index &&
-						this.props.highlightedPotentialMove.isVertical()}
-					highlightPotentialHorizMove={this.props.highlightedPotentialMove !== null &&
-						this.props.highlightedPotentialMove.r == this.props.row &&
-						this.props.highlightedPotentialMove.c == index &&
-						this.props.highlightedPotentialMove.isHorizontal()}
-					handleMouseEvent={this.props.handleMouseEvent}
-					owningPlayerInitials={this.props.ownershipGridRow[index]} />);
-		}
-		return (
-			<div key={this.props.row} className="gameBoardRow">
-				{renderedSquares}
-			</div>
-		);
+	let renderedSquares = [];
+	for (let index = 0; index < gameBoardState.nColumns; index++) {
+		renderedSquares.push(
+			<GameBoardSquare
+				key={ index }
+				column={ index }
+				row={ props.row }
+				highlightPotentialVertMove={ props.highlightedPotentialMove !== null &&
+					props.highlightedPotentialMove.r == props.row &&
+					props.highlightedPotentialMove.c == index &&
+					props.highlightedPotentialMove.isVertical()}
+				highlightPotentialHorizMove={props.highlightedPotentialMove !== null &&
+					props.highlightedPotentialMove.r == props.row &&
+					props.highlightedPotentialMove.c == index &&
+					props.highlightedPotentialMove.isHorizontal()}
+				handleMouseEvent={ props.handleMouseEvent } 
+			/>);
 	}
+	return (
+		<div key={props.row} className="gameBoardRow">
+			{ renderedSquares }
+		</div>
+	);
 }
 
-class GameBoardSquare extends Component {
-	static contextType = GameStateContext;
-	render() {
-		const gameBoardState = this.context;
+function GameBoardSquare(props) {
+	const [ gameState, ] = useContext(gameStateContext);
+	const { gameBoardState, ownershipGrid } = gameState;
 
-		let className = "gameBoardSquare";
-		const squareIsLastInRow = this.props.column == (gameBoardState.nColumns - 1);
-		const squareIsLastInColumn = this.props.row == (gameBoardState.nRows - 1);
+	let className = "gameBoardSquare";
+	const squareIsLastInRow = props.column == (gameBoardState.nColumns - 1);
+	const squareIsLastInColumn = props.row == (gameBoardState.nRows - 1);
 
-		if (squareIsLastInRow)
-			className += " rightBorder";
-		if (squareIsLastInColumn)
-			className += " bottomBorder";
+	if (squareIsLastInRow)
+		className += " rightBorder";
+	if (squareIsLastInColumn)
+		className += " bottomBorder";
 
-		const children = [
-			<SelectionCircle key={3}
-				handleMouseEvent={(event) => this.props.handleMouseEvent(
-					event, this.props.row, this.props.column)} />,
-			<div key={0} className="dot" />
-		];
+	const children = [
+		<SelectionCircle key={3}
+			handleMouseEvent={ (event) => props.handleMouseEvent(
+				event, props.row, props.column) } />,
+		<div key={0} className="dot" />
+	];
 
-		if (gameBoardState.hasLineDownFrom(this.props.row, this.props.column)) {
-			children.push(<div key={4} className="vertLine" />);
-		}
-
-		if (gameBoardState.hasLineToRightOf(this.props.row, this.props.column)) {
-			children.push(<div key={5} className="horizLine" />);
-		}
-
-		if (this.props.highlightPotentialHorizMove) {
-			children.push(<div key={6} className="greyedHorizLine" />);
-		}
-
-		if (this.props.highlightPotentialVertMove) {
-			children.push(<div key={7} className="greyedVertLine" />);
-		}
-
-		if (this.props.owningPlayerInitials) {
-			children.push(<div key={8} className="boxLabel" align="center"> {this.props.owningPlayerInitials} </div>);
-		}
-
-		return (
-			<div className={className}>
-				{children}
-			</div>
-		);
+	if (gameBoardState.hasLineDownFrom(props.row, props.column)) {
+		children.push(<div key={4} className="vertLine" />);
 	}
+
+	if (gameBoardState.hasLineToRightOf(props.row, props.column)) {
+		children.push(<div key={5} className="horizLine" />);
+	}
+
+	if (props.highlightPotentialHorizMove) {
+		children.push(<div key={6} className="greyedHorizLine" />);
+	}
+
+	if (props.highlightPotentialVertMove) {
+		children.push(<div key={7} className="greyedVertLine" />);
+	}
+
+	const initials = ownershipGrid[props.row, props.column];
+	if (initials) {
+		children.push(<div key={8} className="boxLabel" align="center"> { initials } </div>);
+	}
+
+	return (
+		<div className={ className }>
+			{ children }
+		</div>
+	);
 }
 
-class SelectionCircle extends Component {
+function SelectionCircle(props) {
 	/* Component representing a selectable position on the dots and boxes grid
 	 * Click and enter/leave events used to either trigger a move attempt
 	 * or to highlight a possible move.
 	 */
-	render() {
-		return (
-			<div className="selectedCoordCircle"
-				onMouseDown={() => this.props.handleMouseEvent(mouseEvents.DOWN)}
-				onMouseUp={() => this.props.handleMouseEvent(mouseEvents.UP)}
-				onMouseEnter={() => this.props.handleMouseEvent(mouseEvents.ENTER)}
-				onMouseLeave={() => this.props.handleMouseEvent(mouseEvents.LEAVE)} />
-		);
-	}
+	return (
+		<div className="selectedCoordCircle"
+			onMouseDown={() => props.handleMouseEvent(mouseEvents.DOWN)}
+			onMouseUp={() => props.handleMouseEvent(mouseEvents.UP)}
+			onMouseEnter={() => props.handleMouseEvent(mouseEvents.ENTER)}
+			onMouseLeave={() => props.handleMouseEvent(mouseEvents.LEAVE)} 
+		/>
+	);
 }
 
 class OwnershipGrid {
@@ -328,6 +325,10 @@ function isHorizontalLine(firstCoord, secondCoord) {
 	}
 }
 
+// TODO:  This is a very crude function; just takes biggest dimension
+// and uses that to scale.  Should scale horiz and vert, then take the
+// min of those two scalings so that it fits in viewport, instead of
+// taking the max of both then using that to determine viewport.
 function determineScalingFactor(boardSize) {
 	const fractionOfScreenTaken = .8;
 	const maxPxScaleFactor = 32;
