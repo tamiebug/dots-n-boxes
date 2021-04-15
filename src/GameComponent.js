@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Move, argmax } from "./utility.js";
-import { gameStateContextReducer, gameStateContext } from "./GameContext.js";
+import React, { useEffect, useState, useReducer, useMemo, useContext } from "react";
+import { Move } from "./utility.js";
+import { gameStateReducer, initialGameState , GameStateContext } from "./GameContext.js";
+import { playerEvents } from "./players.js";
 
 const MAX_BOARD_SIZE = 30;
 
@@ -20,52 +21,54 @@ export const mouseTracker = {
 	isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
-export function Game() {	
-	const [ gameState, gameStateDispatch ] = useReducer(gameStateContextReducer);
-	const { players, currentPlayer, gameBoardState } = gameState;
+export function Game() {
+	const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
+	const { matchNumber } = gameState;
 
+	// gameStateDispatch with default settings in order to allow testing of this functional component; in future this initialization will happen elsewhere.
 	useEffect(() => {
-		gameStateDispatch({type: 'setUpGame', settings: {boardHeight: 5, boardWidth: 5, playerName1: "Tamie", playerName2: "CPU", gameType: "CPU", cpuDifficulty: "weak" }});
-	}, []);
-
-	useEffect(() => {
-		players[currentPlayer].endTurn();
-
-		const pointsScored = players.reduce((totalScore, score) => score + totalScore, 0);
-		const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1)
-		if (pointsScored == maxPointsPossible) {
-			const winners = argmax(players.map((player) => player.score));
-			if (winners.length == 1) {
-				// TODO: set score support!
-				// Do something... a player won!
-				// Ask if another match is desired
-				// TEMPORARY PLACEHOLDER CODE:
-				setTimeout(() => {
-					alert(`Player ${players[winners[0]]._name} won the game`)
-				});
-			} else {
-				// There's a ${winners.length}-way tie!
-				setTimeout(() => {
-					alert(`The set of players ${winners.map((winner) => players[winner]._name)} have won the game`);j
-				})
-			}
-		} else {
-			players[currentPlayer].startTurn();
-		}
-	}, [ gameBoardState ])
+		const players = [0, 1];
+		gameStateDispatch({ type: '__runBatchedActions', batchedActions: [
+			{ type: 'setUpGame', settings: { boardHeight: 5, boardWidth: 5, playerNames: ["Hardcoded Player 1", "CPU"], gameType: "CPU", cpuDifficulty: "weak" }},
+			{ type: '__runBatchedActions', 
+				batchedActions: players.map((playerNumber) => ({ 
+					type: 'registerPlayerCallback', 
+					player: playerNumber, 
+					callback: (coms) => {
+						switch (coms.type) {
+							case playerEvents.SUBMIT_MOVE:
+								if (coms.move.constructor.name !== Move.name) {
+									throw `player coms parsing error:  move type coms with no move field`;
+								} else {
+									gameStateDispatch({ 
+										type: 'attemptMove', 
+										move: coms.move,
+										player: playerNumber,
+									});
+								}
+								break;
+							default:
+								throw `unrecognized player com type: ${coms.type}`;
+					}},
+				})),
+			},
+			{ type: 'updatePlayers', samePlayerGoes: true },
+			{ type: 'startNextTurnIfAble', samePlayerGoes: true },
+		]});
+	}, [ ]);
 
 	/* Precaution to avoid unneeded renders in child components on parent component rerender */
 	const contextValue = useMemo(() => {
 		return { gameState, gameStateDispatch };
-	}, [gameState, gameStateDispatch]);
+	}, [ gameState, gameStateDispatch ]);
+
+	if (gameState.gameBoardState === null) return null;
 
 	return (
 		<div className="row game-div">
 			<div className="col col-sm-auto">
-				<GameStateContext.Provider value={contextValue}>
-					<GameBoard
-						key={ gameState.matchNumber }
-					/>
+				<GameStateContext.Provider value={ contextValue }>
+					<GameBoard key={ matchNumber } />
 				</GameStateContext.Provider>
 			</div>
 		</div>
@@ -75,12 +78,14 @@ export function Game() {
 function GameBoard() {
 	const [ selectedCoordinate, setSelectedCoordinate ] = useState(null);
 	const [ highlightedPotentialMove, setHighlightedPotentialMove ] = useState(null);
-	const { gameState } = useContext(gameStateContext);
-	const { players, gameBoardState } = gameState;
+	const { gameState } = useContext(GameStateContext);
+	const { players, gameBoardState, currentPlayer } = gameState;
+
+	if (gameState.gameBoardState == null) return null;
 
 	function render() {
-		const boardSize = Math.max(...gameBoardState.getDimensions.values())
-		const renderedRows = gameBoardState.map((_, index) => {
+		const boardSize = Math.max(...Object.values(gameBoardState.getDimensions()));
+		const renderedRows = gameBoardState.squares.map((_, index) => {
 			return (<GameBoardRow
 				key={index}
 				row={index}
@@ -132,7 +137,7 @@ function GameBoard() {
 						setSelectedCoordinate(null);
 						break;
 					}
-					this.highlightDot(row, column);
+					highlightDot(row, column);
 					if (isAdjacent) {
 						highlightPossibleMove(row, column);
 					}
@@ -156,8 +161,9 @@ function GameBoard() {
 			isHorizontalLine(selectedCoordinate, { row, column }) ? "h" : "v"
 		);
 
+		// TODO:  Potentially move this into the reducer, 'onLocalMoveAttempt' action maybe?
 		if (gameBoardState.isMovePossible(move))  {
-			players.forEach((player) => player.onLocalMoveAttempt(move));
+			players[currentPlayer].onLocalMoveAttempt(move);
 		}
 	}
 
@@ -193,7 +199,7 @@ function GameBoard() {
 }
 
 function GameBoardRow(props) {
-	const [ gameState, ] = useContext(gameStateContext);
+	const { gameState } = useContext(GameStateContext);
 	const { gameBoardState } = gameState;
 
 	let renderedSquares = [];
@@ -222,7 +228,7 @@ function GameBoardRow(props) {
 }
 
 function GameBoardSquare(props) {
-	const [ gameState, ] = useContext(gameStateContext);
+	const { gameState } = useContext(GameStateContext);
 	const { gameBoardState, ownershipGrid } = gameState;
 
 	let className = "gameBoardSquare";
@@ -257,10 +263,10 @@ function GameBoardSquare(props) {
 		children.push(<div key={7} className="greyedVertLine" />);
 	}
 
-	const initials = ownershipGrid[props.row, props.column];
+	const initials = ownershipGrid.board[props.row][props.column];
 	if (initials) {
 		children.push(<div key={8} className="boxLabel" align="center"> { initials } </div>);
-	}
+	}	
 
 	return (
 		<div className={ className }>
@@ -282,39 +288,6 @@ function SelectionCircle(props) {
 			onMouseLeave={() => props.handleMouseEvent(mouseEvents.LEAVE)} 
 		/>
 	);
-}
-
-class OwnershipGrid {
-	constructor(rows, columns, _givenBoard) {
-		if (_givenBoard) {
-			this.board = _givenBoard;
-		} else {
-			this.board = [];
-			for (let r = 0; r < rows; r++) {
-				let row = [];
-				for (let c = 0; c < columns; c++)
-					row.push(null);
-				this.board.push(row);
-			}
-		}
-	}
-
-	update(valuesWithCoordinates) {
-		// Returns a new OwnershipGrid object on change as to play nice with React state
-		if (valuesWithCoordinates.length == 0)
-			return this;
-		const newBoard = this.board.map((boardRow, r) => {
-			return boardRow.map((boardElement, c) => {
-				for (const v of valuesWithCoordinates) {
-					if (v.column == c && v.row == r)
-						return v.value;
-				}
-				return boardElement;
-			});
-		}
-		);
-		return new OwnershipGrid(null, null, newBoard);
-	}
 }
 
 function isHorizontalLine(firstCoord, secondCoord) {

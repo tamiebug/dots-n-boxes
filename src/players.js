@@ -1,5 +1,8 @@
 import { Move, SquareGrid } from "./utility.js"
 
+export const playerEvents = Object.freeze({
+  SUBMIT_MOVE:  Symbol("submit move"),
+});
 
 /*******************************************************************************
  * AUXILARY CLASSES FOR PLAYER FUNCTIONALITY
@@ -131,7 +134,7 @@ function groupMovesIntoTaggedChains(currentState, squareCompleters, squareComple
     ...squareCompletionMakers.map(move => ({move: move, isCompleter: false, hasBeenConsumed: false}))
   ];
 
-  const len = taggedMoves.lengthc;
+  const len = taggedMoves.length;
   for (let i = 0; i < len; i++) {
     if (taggedMoves[i].hasBeenConsumed) continue;
     taggedMoves[i].hasBeenConsumed = true;
@@ -184,9 +187,21 @@ export class Player {
    */
   constructor(name) {
     this._name = name;
-    this._moveCompleteCallback = null;
+    this._gameCallback = null;
     this._currentState = null;
+    this._myTurn = false;
     this.score = 0;
+  }
+
+  startTurn() {
+    // NOTE:  If generateNextMove() ever becomes a slow method for some AI players and the UI for
+    // the game is changed to become more responsive, consider spinning off a Web Worker for this
+    this._myTurn = true; 
+    this.generateNextMove();
+  }
+
+  endTurn() {
+    this._myTurn = false;
   }
 
   generateNextMove() {
@@ -195,30 +210,27 @@ export class Player {
     throw new Error(this.constructor.name + 'does not implement generateNextMove functionality');*/
   }
 
-  onLocalMoveAttempt() {
+  onLocalMoveAttempt(move) {
     /*
     //  Keep empty if not using local GameBoard actions to determine move
     throw new Error(this.constructor.name + 'does not implement onLocalMoveAttempt functionality');*/
   }
 
-  updatePlayerState(squareGrid, moveCompleteCallback) {
-    this._moveCompleteCallback = moveCompleteCallback;
+  registerCallback(callback) {
+    this._gameCallback = callback;
+    return this;
+  }
+
+  updatePlayerState(squareGrid) {
     this._currentState = squareGrid.copy();
     return this.onLocalMoveAttempt.bind(this);
   }
 
   performMove(move_s) {
-    const doMove = (move) => {
-      // We want to consume the _moveCompleteCallback so that it won't
-      // work anymore, we'll need to be passed a new one
-      if (this._moveCompleteCallback) {
-        let moveCompleteCallback = this._moveCompleteCallback;
-        this._moveCompleteCallback = null; 
-        moveCompleteCallback(move);
-      }
-    }
-    
-    if (move_s instanceof Array) {
+    if (!this._myTurn) throw new Error("performMove attempted to perform a move on wrong turn");
+    const doMove = (move) => { if (this._gameCallback) this._gameCallback({ type: playerEvents.SUBMIT_MOVE, move }) };
+
+    if (Array.isArray(move_s)) {
       if (!(move_s.length > 0)) {
         throw new Error("performMove received empty Move[]");
       } else if (move_s.some(move => !(move instanceof Move))) {
@@ -276,7 +288,8 @@ export class LocalHumanPlayer extends Player {
   }
 
   onLocalMoveAttempt(move) {
-    this.performMove(move);
+    if (this._myTurn) this.performMove(move);
+    return;
   }
 
   generateNextMove() {
