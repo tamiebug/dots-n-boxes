@@ -54,7 +54,6 @@ body {
 .greyedHorizLine, .greyedVertLine {
   background: grey;
   opacity: 0.5;
-  z-index: -6;
   position: absolute;
   top: .25em;
   left: .25em;
@@ -76,6 +75,10 @@ body {
 .vertLine, .greyedVertLine {
   height: 6em;
   width: .5em;
+}
+
+.gameControlPanel{
+  height: 96.5%;
 }
 
 .gameBoard {

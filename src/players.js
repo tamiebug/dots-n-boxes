@@ -166,6 +166,7 @@ function groupMovesIntoTaggedChains(currentState, squareCompleters, squareComple
  * PLAYER AGENTS AND AI CLASSES 
  * class Player
  * class LocalHumanPlayer
+ * class RemotePlayer
  * class RandomPlayer
  * class WeakAI
  * class BasicAI
@@ -316,6 +317,25 @@ export class RandomPlayer extends Player {
 
   generateNextMove() { 
 		setTimeout(() => this.performMove(this._currentState.allPossibleMoves()), 700);
+  }
+}
+
+export class RemotePlayer extends Player {
+  /**
+   * Class representing a remote human player faced online
+   * 
+   * @param {String} name - Name to be associated with Player and shown on scoreboard
+   */
+  constructor(name) {
+    super(name);
+  }
+
+  onLogicalMoveAttempt(move) {
+    //TODO: everything
+  }
+
+  generateNextMove() {
+    //TODO: everything
   }
 }
 

@@ -36,11 +36,13 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "bootstrap": "^4.5.3",
+    "bootstrap": "^4.6.0",
+    "bootstrap-react": "*",
     "esm": "^3.2.25",
     "jquery": "^3.5.1",
     "popper.js": "^1.16.1",
     "react": "^16.14.0",
+    "react-bootstrap": "^1.5.2",
     "react-dom": "^16.14.0",
     "react-hot-loader": "^4.13.0"
   },

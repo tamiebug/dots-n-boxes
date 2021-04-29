@@ -296,7 +296,7 @@ export class Move {
   }
 
 	toString() {
-		return "(" + move.r + ", " + move.c + ", " + move.isHorizontal()? "h)" : "v)";
+		return "(" + this.r + ", " + this.c + ", " + (this.isHorizontal()? "h)" : "v)");
   }
   
   static fromJSON(JSON) {

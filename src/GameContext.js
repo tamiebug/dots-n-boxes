@@ -3,10 +3,11 @@ import { Move, SquareGrid , OwnershipGrid } from "./utility.js";
 import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
 
 // Useful constants extracted here for easy changing
-const NUMBER_PLAYERS = 2;
-const MAX_BOARD_SIZE = 30;
-const ALLOWED_GAME_TYPES = ['CPU', 'local'];
-const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
+export const NUMBER_PLAYERS = 2;
+export const MAX_BOARD_SIZE = 30;
+export const MIN_BOARD_SIZE = 2;
+export const ALLOWED_GAME_TYPES = ['CPU', 'local'];
+export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 
 export const GameStateContext = createContext();
 
@@ -24,7 +25,6 @@ export const gameStateReducer = function(state, action) {
 	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, ownershipGrid, gameActive } = state;
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
-		// Meant for gameStateReducer internal code reuse puposes only
 		case '__runBatchedActions':
 			validateAction(action, [{ key: 'batchedActions', 'instanceOf': Array }]);
 			return action.batchedActions.reduce(gameStateReducer, {...state});
@@ -171,7 +171,7 @@ function validateSettings(settings) {
 		throw `validateSettings: invalid gameType, only allowed types are ${ALLOWED_GAME_TYPES}, received ${settings.gameType}`;
 	}	
 	if (settings.gameType == "CPU" && (ALLOWED_DIFFICULTIES.indexOf(settings.cpuDifficulty) == -1)) {
-		throw `validateSettings: invalid cpuDifficulty, only allowed types are ${ALLOWED_DIFFICULTIES}`;
+		throw `validateSettings: invalid cpuDifficulty, only allowed types are ${ALLOWED_DIFFICULTIES}, ${settings.cpuDifficulty} was selected.`;
 	}	
 	if (!Number.isInteger(settings.boardWidth) || settings.boardWidth < 2 || settings.boardWidth > MAX_BOARD_SIZE) { 
 		throw `validateSettings: invalid boardWidth, value ${settings.boardWith} passed in`;

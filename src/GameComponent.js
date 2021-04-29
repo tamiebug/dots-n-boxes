@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useReducer, useMemo, useContext } from "react";
+import React, { useState, useReducer, useMemo, useContext } from "react";
 import { Move } from "./utility.js";
 import { gameStateReducer, initialGameState , GameStateContext } from "./GameContext.js";
-import { playerEvents } from "./players.js";
+import { ControlPanel } from "./ControlPanel.js";
 
-const MAX_BOARD_SIZE = 30;
+export const MAX_BOARD_SIZE = 30;
 
 const mouseEvents = Object.freeze({
 	DOWN:		Symbol("down"),
@@ -12,7 +12,6 @@ const mouseEvents = Object.freeze({
 	LEAVE:	Symbol("leave")
 });
 
-// TODO: Does this belong here?  Seems like something that belongs in App.js and is then passed down to the GameComponent, because it may be used elsewhere.
 export const mouseTracker = {
 	// We need to know of the current mouse state for some functionalities
 	mouseButtonDown : false,
@@ -25,52 +24,21 @@ export function Game() {
 	const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
 	const { matchNumber } = gameState;
 
-	// gameStateDispatch with default settings in order to allow testing of this functional component; in future this initialization will happen elsewhere.
-	useEffect(() => {
-		const players = [0, 1];
-		gameStateDispatch({ type: '__runBatchedActions', batchedActions: [
-			{ type: 'setUpGame', settings: { boardHeight: 5, boardWidth: 5, playerNames: ["Hardcoded Player 1", "CPU"], gameType: "CPU", cpuDifficulty: "weak" }},
-			{ type: '__runBatchedActions', 
-				batchedActions: players.map((playerNumber) => ({ 
-					type: 'registerPlayerCallback', 
-					player: playerNumber, 
-					callback: (coms) => {
-						switch (coms.type) {
-							case playerEvents.SUBMIT_MOVE:
-								if (coms.move.constructor.name !== Move.name) {
-									throw `player coms parsing error:  move type coms with no move field`;
-								} else {
-									gameStateDispatch({ 
-										type: 'attemptMove', 
-										move: coms.move,
-										player: playerNumber,
-									});
-								}
-								break;
-							default:
-								throw `unrecognized player com type: ${coms.type}`;
-					}},
-				})),
-			},
-			{ type: 'updatePlayers', samePlayerGoes: true },
-			{ type: 'startNextTurnIfAble', samePlayerGoes: true },
-		]});
-	}, [ ]);
-
 	/* Precaution to avoid unneeded renders in child components on parent component rerender */
 	const contextValue = useMemo(() => {
 		return { gameState, gameStateDispatch };
 	}, [ gameState, gameStateDispatch ]);
 
-	if (gameState.gameBoardState === null) return null;
-
 	return (
 		<div className="row game-div">
-			<div className="col col-sm-auto">
-				<GameStateContext.Provider value={ contextValue }>
-					<GameBoard key={ matchNumber } />
-				</GameStateContext.Provider>
-			</div>
+			<GameStateContext.Provider value={ contextValue }>
+				<div className="col col-sm-auto">
+					<GameBoard key={ matchNumber + 1 } />
+				</div>
+				<div className="col col-sm-auto">
+					<ControlPanel key={ 0 } />
+				</div>	
+			</GameStateContext.Provider>
 		</div>
 	);
 }

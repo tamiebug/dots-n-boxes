@@ -1,6 +1,9 @@
 import React, { Component } from "react";
 import { hot } from "react-hot-loader"
 import "./App.css";
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css'
+
 import { Game } from "./GameComponent.js";
 
 export class App extends Component {
