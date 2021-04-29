@@ -142,7 +142,7 @@ function setUpGame(settings, state) {
 					player2 = new WeakAI(settings.playerNames[1]);
 					break;
 				case "basic":
-					player2 = new BasicAI(settings.playerName[1]);
+					player2 = new BasicAI(settings.playerNames[1]);
 					break;
 				default:
 					throw `Incorrect settings.cpuDifficulty value: ${settings.cpuDifficulty}`;
