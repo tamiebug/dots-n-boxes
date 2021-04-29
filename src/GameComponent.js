@@ -199,37 +199,16 @@ function GameBoardSquare(props) {
 	const { gameState } = useContext(GameStateContext);
 	const { gameBoardState, ownershipGrid } = gameState;
 
-	const children = [
-		<SelectionCircle key={3}
-			handleMouseEvent={ (event) => props.handleMouseEvent(
-				event, props.row, props.column) } />,
-		<div key={0} className="dot" />
-	];
-
-	if (gameBoardState.hasLineDownFrom(props.row, props.column)) {
-		children.push(<div key={4} className="vertLine" />);
-	}
-
-	if (gameBoardState.hasLineToRightOf(props.row, props.column)) {
-		children.push(<div key={5} className="horizLine" />);
-	}
-
-	if (props.highlightPotentialHorizMove) {
-		children.push(<div key={6} className="greyedHorizLine" />);
-	}
-
-	if (props.highlightPotentialVertMove) {
-		children.push(<div key={7} className="greyedVertLine" />);
-	}
-
-	const initials = ownershipGrid.board[props.row][props.column];
-	if (initials) {
-		children.push(<div key={8} className="boxLabel" align="center"> { initials } </div>);
-	}	
-
+	const squareOwnerInitials = ownershipGrid.board[props.row][props.column];
 	return (
 		<div className="gameBoardSquare">
-			{ children }
+			<SelectionCircle key={3} handleMouseEvent={ (event) => props.handleMouseEvent( event, props.row, props.column) } />
+			<div key={0} className="dot" />
+			{ gameBoardState.hasLineDownFrom(props.row, props.column) && <div key={4} className="vertLine" /> }
+			{ gameBoardState.hasLineToRightOf(props.row, props.column) && <div key={5} className="horizLine" /> }
+			{ props.highlightPotentialHorizMove && <div key={6} className="greyedHorizLine" /> }
+			{ props.highlightPotentialVertMove &&  <div key={7} className="greyedVertLine" /> }
+			{ squareOwnerInitials && <div key={8} className="boxLabel" align="center"> { squareOwnerInitials } </div> }
 		</div>
 	);
 }
