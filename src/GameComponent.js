@@ -199,15 +199,6 @@ function GameBoardSquare(props) {
 	const { gameState } = useContext(GameStateContext);
 	const { gameBoardState, ownershipGrid } = gameState;
 
-	let className = "gameBoardSquare";
-	const squareIsLastInRow = props.column == (gameBoardState.nColumns - 1);
-	const squareIsLastInColumn = props.row == (gameBoardState.nRows - 1);
-
-	if (squareIsLastInRow)
-		className += " rightBorder";
-	if (squareIsLastInColumn)
-		className += " bottomBorder";
-
 	const children = [
 		<SelectionCircle key={3}
 			handleMouseEvent={ (event) => props.handleMouseEvent(
@@ -237,7 +228,7 @@ function GameBoardSquare(props) {
 	}	
 
 	return (
-		<div className={ className }>
+		<div className="gameBoardSquare">
 			{ children }
 		</div>
 	);

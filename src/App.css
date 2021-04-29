@@ -96,10 +96,10 @@ body {
   width: 6em;
 }
 
-.bottomBorder {
+.gameBoardRow:last-child > .gameBoardSquare {
   height: 1em;
 }
 
-.rightBorder {
+.gameBoardSquare:last-child {
   width: 1em;
 }
