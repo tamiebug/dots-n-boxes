@@ -331,6 +331,17 @@ export class TaggedGrid {
     return retVal;
   }
 
+  clearTagForAll(tag) {
+    const newGrid = new TaggedGrid(undefined, undefined, this.taggedGrid);
+    for (const r = 0; r < this.nRows; r++) {
+      for (const c = 0; c < this.nColumns; c++) {
+        // Yeah, I just destructured into a computed property name and already-existing variable using assignment-without-declaration syntax.  Bite me, Andy
+        ({[tag]: _, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
+      }
+    }
+    return newGrid
+  }
+
   at(row, column) {
     return {...this.taggedGrid[row][column]};
   }
