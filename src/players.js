@@ -186,11 +186,12 @@ export class Player {
    * AI agents and networked players that their turn is beginning
    * endTurn() ends a player's turn, not letting them perform moves.
    */
-  constructor(name) {
+  constructor(name, moveDelay = 600) {
     this._name = name;
     this._gameCallback = null;
     this._currentState = null;
     this._myTurn = false;
+    this._moveDelay = moveDelay;
     this.score = 0;
   }
 
@@ -316,7 +317,7 @@ export class RandomPlayer extends Player {
   }
 
   generateNextMove() { 
-		setTimeout(() => this.performMove(this._currentState.allPossibleMoves()), 700);
+		setTimeout(() => this.performMove(this._currentState.allPossibleMoves()), this._moveDelay);
   }
 }
 
@@ -358,28 +359,33 @@ export class WeakAI extends Player {
     if (this._currentState == null) {
       throw new Error("WeakAI generateNextMove called with null _currentState");
     }
+    const strategyPromise = new Promise((resolve, reject) => {
+      const squareCompleters = this._currentState.findSquareCompletingMoves();
+      if (squareCompleters.length > 0) {
+        resolve(squareCompleters);
+        //this.performMove(squareCompleters);
+        return;
+      }
 
-    const squareCompleters = this._currentState.findSquareCompletingMoves();
-    if (squareCompleters.length > 0) {
-      this.performMove(squareCompleters);
-      return;
-    }
-
-    const squareCompletionMakers = findCompletableSquareMakers(this._currentState);
-    const allMoves = this._currentState.allPossibleMoves();
-    if (squareCompletionMakers.length == allMoves.length) {
-      this.performMove(allMoves);
-      return;
-    } else {
-      const goodMoves = allMoves.filter(move => {
-        for (const badMove of squareCompletionMakers) {
-          if (move.equals(badMove)) return false;
-        }
-        return true;
-      });
-      this.performMove(goodMoves);
-      return;
-    }
+      const squareCompletionMakers = findCompletableSquareMakers(this._currentState);
+      const allMoves = this._currentState.allPossibleMoves();
+      if (squareCompletionMakers.length == allMoves.length) {
+        resolve(allMoves);
+        //this.performMove(allMoves);
+        return;
+      } else {
+        const goodMoves = allMoves.filter(move => {
+          for (const badMove of squareCompletionMakers) {
+            if (move.equals(badMove)) return false;
+          }
+          return true;
+        });
+        resolve(goodMoves);
+        //this.performMove(goodMoves);
+        return;
+      }
+    });
+    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => this.performMove(moves));
   }
 }
 
@@ -419,25 +425,37 @@ export class BasicAI extends Player {
       throw new Error("BasicAI generateNextMove called with null _currentState");
     }
 
+    const moveDelay = 600;
+
     const squareCompletionMakers = findCompletableSquareMakers(this._currentState);
     const squareCompleters = this._currentState.findSquareCompletingMoves();
     const taggedChains = groupMovesIntoTaggedChains(this._currentState, squareCompleters, squareCompletionMakers);
-    
-    for (const moveSuggester of this.strategy) {
-      const moves = moveSuggester(taggedChains, this._currentState);
-      if (!(moves instanceof Array)) {
-        throw new Error(`a moveSuggester, ${moveSuggester.name} did not return an array of Move.  All moveSuggesters should return Move[], even if empty`);
-      }
 
-      if (moves.some(move => !(move instanceof Move))) {
-        throw new Error(`Error in ${moveSuggester.name}, returned a non-move Array`);
-      }
+    this._gameCallback({ type: playerEvents.AI_SHOW_CHAINS, chains: turnTaggedChainsIntoBoxArrays(taggedChains, this._currentState) });
 
-      if (moves.length > 0) {
-        this.performMove(moves);
-        return;
+    const strategyPromise = new Promise((resolve, reject) => {
+      for (const moveSuggester of this.strategy) {
+        const moves = moveSuggester(taggedChains, this._currentState);
+        if (!(moves instanceof Array)) {
+          throw new Error(`a moveSuggester, ${moveSuggester.name} did not return an array of Move.  All moveSuggesters should return Move[], even if empty`);
+        }
+  
+        if (moves.some(move => !(move instanceof Move))) {
+          throw new Error(`Error in ${moveSuggester.name}, returned a non-move Array`);
+        }
+  
+        if (moves.length > 0) {
+          resolve(moves);
+          break;
+        }
       }
-    }
+    });
+
+    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => {
+      this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS })
+      this.performMove(moves);
+    });
+
 
 
   // generateNextMove() END
@@ -685,6 +703,10 @@ function fallthroughMovesFunction(taggedChains) {
   // List no moves; Throw error and start debugger if called.
   debugger;
   throw new Error("Reached the fallthrough in the players decision-making list.");
+}
+
+function timeoutPromise(delay) {
+  return new Promise((resolve, reject) => setTimeout(resolve, delay));
 }
 
 export const testables = { groupMovesIntoTaggedChains, findCompletableSquareMakers}
