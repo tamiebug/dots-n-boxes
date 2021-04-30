@@ -304,39 +304,54 @@ export class Move {
   }
 }
 
-export class OwnershipGrid {
-	constructor(rows, columns, _givenBoard) {
-		if (_givenBoard) {
-			this.board = _givenBoard;
-		} else {
-			this.board = [];
-			for (let r = 0; r < rows; r++) {
-				let row = [];
-				for (let c = 0; c < columns; c++)
-					row.push(null);
-				this.board.push(row);
-			}
-		}
+export class TaggedGrid {
+  constructor(rows, columns, _givenTaggedGrid) {
+    if (_givenTaggedGrid) {
+      this.taggedGrid = _givenTaggedGrid;
+      this.nRows = _givenTaggedGrid.nRows;
+      this.nColumns = _givenTaggedGrid.nColumns;
+    } else {
+      this.taggedGrid = [];
+      this.nRows = rows;
+      this.nColumns = columns;
+      for (let r = 0; r < rows; r++) {
+        let row = [];
+        for (let c = 0; c < columns; c++) {
+          row.push({});
+        }
+        this.taggedGrid.push(row);
+      }
+    }
   }
 
+  // Ensure updated grid !=== old grid for React
   update(valuesWithCoordinates) {
-		// Returns a new OwnershipGrid object on change as to play nice with React state
-		if (valuesWithCoordinates.length == 0)
-			return this;
-		const newBoard = this.board.map((boardRow, r) => {
-			return boardRow.map((boardElement, c) => {
-				for (const v of valuesWithCoordinates) {
-					if (v.column == c && v.row == r)
-						return v.value;
-				}
-				return boardElement;
-			});
-		}
-		);
-		return new OwnershipGrid(null, null, newBoard);
-	}
+    const retVal = new TaggedGrid(undefined, undefined, this.taggedGrid);
+    retVal.__update(valuesWithCoordinates);
+    return retVal;
+  }
+
+  at(row, column) {
+    return {...this.taggedGrid[row][column]};
+  }
+  __update(valuesWithCoordinates) {
+    valuesWithCoordinates.forEach( valuesWithCoordinate => {
+      const { row, column, values, clearPrevious } = valuesWithCoordinate;
+      if (row < 0 || row >= this.nRows) {
+        throw new Error(`Invalid update row value in TaggedGrid: ${row}`);
+      } else if (column < 0 || column >= this.nColumns) {
+        throw new Error(`Invalid update column value in TaggedGrid: ${column}`);
+      } else {
+        if (clearPrevious) {
+          this.taggedGrid[row][column] = {...values};
+        } else {
+          this.taggedGrid[row][column] = {...this.taggedGrid[row][column], ...values};
+        }
+      }
+    });
+  }
 }
-  
+
 function deepFreeze(object) {
   /* Take caution when using -- there can be no cyclical references within
    * object to be frozen, and no objects within the chain of freezing that

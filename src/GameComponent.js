@@ -197,9 +197,9 @@ function GameBoardRow(props) {
 
 function GameBoardSquare(props) {
 	const { gameState } = useContext(GameStateContext);
-	const { gameBoardState, ownershipGrid } = gameState;
+	const { gameBoardState, taggedGrid } = gameState;
 
-	const squareOwnerInitials = ownershipGrid.board[props.row][props.column];
+	const squareOwnerInitials = taggedGrid.at(props.row, props.column).initials;
 	return (
 		<div className="gameBoardSquare">
 			<SelectionCircle key={3} handleMouseEvent={ (event) => props.handleMouseEvent( event, props.row, props.column) } />

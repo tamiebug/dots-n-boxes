@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { Move, SquareGrid , OwnershipGrid } from "./utility.js";
+import { Move, SquareGrid , TaggedGrid } from "./utility.js";
 import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
 
 // Useful constants extracted here for easy changing
@@ -17,12 +17,12 @@ export const initialGameState = {
 	'playerActionCallbacks': [],// [ function ]
 	'currentPlayer': null,			// int
 	'gameBoardState': null,			// SquareGrid
-	'ownershipGrid': null,			// OwnershipGrid
+	'taggedGrid': null,					// TaggedGrid
 	'gameActive': false,				// boolean
 };
 
 export const gameStateReducer = function(state, action) {
-	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, ownershipGrid, gameActive } = state;
+	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , gameActive } = state;
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
 		case '__runBatchedActions':
@@ -56,9 +56,9 @@ export const gameStateReducer = function(state, action) {
 		case 'updateOwnershipGrid':
 			validateAction(action, [{ key: 'completedBoxes', 'instanceOf': Array }, { key: 'initials', typeOf: 'string' }]);
 				return {...state,
-				'ownershipGrid': ownershipGrid.update(
+				'taggedGrid': taggedGrid.update(
 					action.completedBoxes.map(box => ({
-						'value': players[currentPlayer].getNameInitials(),
+						'values': { initials: action.initials },
 						'row': box[0],
 						'column': box[1]
 					}))
@@ -158,7 +158,7 @@ function setUpGame(settings, state) {
 		'currentPlayer': 0,
 		'matchNumber': state.matchNumber + 1,
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
-		'ownershipGrid': new OwnershipGrid(settings.boardWidth, settings.boardHeight),
+		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
 		'gameActive': true,
 	}
 }
