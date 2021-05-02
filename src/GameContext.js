@@ -16,13 +16,14 @@ export const initialGameState = {
 	'players': [],							// [ Player ]
 	'playerActionCallbacks': [],// [ function ]
 	'currentPlayer': null,			// int
+	'numberMovesCompleted': -1,					// int
 	'gameBoardState': null,			// SquareGrid
 	'taggedGrid': null,					// TaggedGrid
 	'gameActive': false,				// boolean
 };
 
 export const gameStateReducer = function(state, action) {
-	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , gameActive } = state;
+	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, gameActive } = state;
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
 		case '__runBatchedActions':
@@ -47,11 +48,8 @@ export const gameStateReducer = function(state, action) {
 			})};
 
 		case 'updatePlayers':
-			validateAction(action, [{ key: 'samePlayerGoes', typeOf: 'boolean' }]);
 			players.forEach((player) =>	player.updatePlayerState(gameBoardState));
-			return {...state, 
-				currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS,
-			}
+			return {...state}
 
 		case 'updateOwnershipGrid':
 			validateAction(action, [{ key: 'completedBoxes', 'instanceOf': Array }, { key: 'initials', typeOf: 'string' }]);
@@ -84,8 +82,7 @@ export const gameStateReducer = function(state, action) {
 				// TODO: potentially change some other state variable indicating winner in future?
 				return gameStateReducer({...state}, { type: 'deactivateGame' })
 			} // else
-			players[currentPlayer].startTurn();
-			return {...state};
+			return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
 
 		case 'attemptMove':
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'move', 'instanceOf': Move }]);
@@ -99,7 +96,7 @@ export const gameStateReducer = function(state, action) {
 				{ type: 'updateBoardState', move: action.move },
 				{ type: 'addScore', player: currentPlayer, points: boxesCompletedByMove.length },
 				{ type: 'endCurrentTurn' },
-				{ type: 'updatePlayers', samePlayerGoes: boxesCompletedByMove.length > 0 },
+				{ type: 'updatePlayers'},
 				{ type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0 },
 			]});
 
@@ -156,6 +153,7 @@ function setUpGame(settings, state) {
 		'players': [player1, player2],
 		'playerActionCallbacks': [() => {}, () => {}],
 		'currentPlayer': 0,
+		'numberMovesCompleted': state.numberMovesCompleted + 1,
 		'matchNumber': state.matchNumber + 1,
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
 		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),

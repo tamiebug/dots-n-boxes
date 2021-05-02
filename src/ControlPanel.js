@@ -21,6 +21,13 @@ export function ControlPanel() {
     setShowStartMenu(true);
   };
 
+	useEffect(() => {
+		if (gameState.numberMovesCompleted > -1) {
+			gameState.players[gameState.currentPlayer].startTurn();
+    }
+	}, [gameState.numberMovesCompleted]);
+
+
   useEffect(() => {
     applySettings(gameStateDispatch, DEFAULT_SETTINGS);
   }, [ ]);
