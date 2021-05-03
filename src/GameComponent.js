@@ -20,7 +20,7 @@ export const mouseTracker = {
 	isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
-export function Game() {
+export function Game(props) {
 	const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
 	const { matchNumber } = gameState;
 
@@ -33,17 +33,17 @@ export function Game() {
 		<div className="row game-div">
 			<GameStateContext.Provider value={ contextValue }>
 				<div className="col col-sm-auto">
-					<GameBoard key={ matchNumber + 1 } />
+					<GameBoard key={ matchNumber + 1 } {...props}/>
 				</div>
 				<div className="col col-sm-auto">
-					<ControlPanel key={ 0 } />
+					<ControlPanel key={ 0 } {...props}/>
 				</div>	
 			</GameStateContext.Provider>
 		</div>
 	);
 }
 
-function GameBoard() {
+function GameBoard(props) {
 	const [ selectedCoordinate, setSelectedCoordinate ] = useState(null);
 	const [ highlightedPotentialMove, setHighlightedPotentialMove ] = useState(null);
 	const { gameState } = useContext(GameStateContext);

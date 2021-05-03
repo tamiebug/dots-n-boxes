@@ -4,13 +4,16 @@ import { GameMenu, GameMenuItem } from './GameMenu.js'
 import { playerEvents } from "./players.js";
 import { Move } from "./utility.js";
 
-export const DEFAULT_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
+const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
-export function ControlPanel() {
+export function ControlPanel(props) {
   const { gameState, gameStateDispatch } = useContext(GameStateContext);
-  const { players, currentPlayer, gameActive, gameBoardState } = gameState;
-  const [ player1, player2 ] = players; // Currently this code does not allow for more than two players -- future change?
   const [ showStartMenu, setShowStartMenu ] = useState(true);
+  const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
+
+  const { players, currentPlayer, gameActive, gameBoardState } = gameState;
+  const [ player1, player2 ] = players;
+  
   function onUndoClick() {
     // TODO: Implement Undo functionality [currently disabled]
   };
@@ -29,7 +32,7 @@ export function ControlPanel() {
 
 
   useEffect(() => {
-    applySettings(gameStateDispatch, DEFAULT_SETTINGS);
+    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS);
   }, [ ]);
 
   useEffect(() => {
@@ -58,12 +61,29 @@ export function ControlPanel() {
   return (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
       {showStartMenu == true && <GameStartPanelMenu name="GameMenu" menuKiller={() => setShowStartMenu(false)}/>}
+      {showAppSettingsMenu == true && <AppSettingsMenu 
+        name="AppSettingsMenu" appSettings= {props.appSettings} 
+        setAppSettingsAndKillMenu= {(settings) => {
+          setShowAppSettingsMenu(false);
+          props.setAppSettings(settings)
+        }}
+      />}
       <div className="row">
         <div className="col" id="playerNameDisplay">
           <h1 className="player-1">{player1._name}[{player1.score}]</h1>
           <h1>vs</h1>
           <h1 className="player-2">{player2._name}[{player2.score}]</h1>
           <h2 className="who-goes">{players[currentPlayer]._name} goes</h2>
+          <PanelButton
+            onMouseClick={() => setShowAppSettingsMenu(true)}
+            bootstrapType="secondary"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-gear" viewBox="0 0 16 16">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+            </svg>
+             Settings
+          </PanelButton>
         </div>
       </div>
       <div className="row flex-grow-1 justify-content-center">
@@ -73,8 +93,7 @@ export function ControlPanel() {
               <PanelButton
                 onMouseClick={() => this.onUndoClick()} 
                 bootstrapType="primary"
-                text="Undo Move"
-              />
+              >Undo Move</PanelButton>
             </div>
           </div>
           <div className="row">
@@ -82,8 +101,7 @@ export function ControlPanel() {
               <PanelButton
                 onMouseClick={() => onNewGame()}
                 bootstrapType="danger"
-                text="New Game"
-              />
+              >New Game</PanelButton>
             </div>
           </div>
         </div>
@@ -95,8 +113,56 @@ export function ControlPanel() {
 function PanelButton(props) {
   return (
     <button type="button" className={`btn btn-${props.bootstrapType}`} onClick={() => props.onMouseClick()}>
-      { props.text }
+      { props.children }
     </button>
+  );
+}
+
+function AppSettingsMenu(props) {
+  function handleFormEvent(event, type, gameMenuContext) {
+    const { formData, setFormData } = gameMenuContext;
+    switch (type) {
+      case 'debugModeChanged':
+        setFormData({...formData, debugMode: !formData.debugMode});
+        break;
+      case 'savePreviousMatchSettingsChanged':
+        setFormData({...formData, savePreviousMatchSettings: !formData.savePreviousMatchSettings});
+        break;
+      case 'saveAppSettings':
+        event.preventDefault();
+        props.setAppSettingsAndKillMenu(formData);
+        break;
+      default:
+        throw new Error(`Invalid form event type: ${type}`);
+    }
+  }
+
+  return (
+    <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={ props.appSettings } items ={gameMenuContext => {
+      const { formData } = gameMenuContext;
+      return (<>
+        <GameMenuItem pageName="Application Settings">
+          <form id="AppSettingsForm" onSubmit={(event) => handleFormEvent(event, 'saveAppSettings', gameMenuContext)}>
+            <fieldset>
+              <legend> Debugging Settings </legend>
+              <label> Debug Mode
+                <input type="checkbox" value="debugMode" name="Debug Mode" checked={ formData.debugMode } 
+                  onClick={ event => handleFormEvent(event, 'debugModeChanged', gameMenuContext )}/>
+              </label>
+            </fieldset>
+            <fieldset>
+              <legend> Miscellaneous Settings </legend>
+              <label> Save Previous Match Settings 
+                <input type="checkbox" value="savePreviousMatchSettings" name="Save Previous Match Settings" 
+                  checked= { formData.savePreviousMatchSettings } 
+                  onClick={ event => handleFormEvent(event, 'savePreviousMatchSettingsChanged', gameMenuContext)} />
+              </label>
+            </fieldset>
+            <input type="Submit" value="Save Settings"/>
+          </form>
+        </GameMenuItem>
+      </>);
+    }}/>
   );
 }
 
@@ -150,7 +216,7 @@ function GameStartPanelMenu(props) {
   }
 
   return (
-    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={DEFAULT_SETTINGS} items={(gameMenuContext) => { 
+    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ DEFAULT_GAME_SETTINGS } items={(gameMenuContext) => { 
       const { formData, linkTo } = gameMenuContext;
       return (<>
         <GameMenuItem pageName="Home Page">
@@ -218,7 +284,7 @@ function GameStartPanelMenu(props) {
 }
 
 function populateBoardSizeSelect(selectElement, min, max) {
-  const defaultSize = DEFAULT_SETTINGS.boardHeight;
+  const defaultSize = DEFAULT_GAME_SETTINGS.boardHeight;
   for (let i=min; i<max; i++) {
     const optionElement = document.createElement("option");
     optionElement.textContent = `${i} x ${i}`;

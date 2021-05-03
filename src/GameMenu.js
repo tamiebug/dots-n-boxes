@@ -18,11 +18,18 @@ export function GameMenu(props) {
     currentPage: currentMenuPage,
   };
 
+  function carouselContents() {
+    const kids = props.items(context).props.children;
+    const itemsMapping = gameMenuItem => GameMenuItem({children: gameMenuItem.props.children, pageName: gameMenuItem.props.pageName})
+    if (React.Children.count(kids) == 1) return itemsMapping(kids)
+    else return kids.map(itemsMapping);
+  }
+
   // react-bootstrap Carousel does not function with non-Carousel.Item children, hence this workaround until a better one is found.
   return (
     <Modal show={ true }>
       <Carousel activeIndex={ currentMenuPage } controls={ false } indicators={ false } interval={ null } keyboard={ false }>
-        { props.items(context).props.children.map(gameMenuItem => GameMenuItem({children: gameMenuItem.props.children, pageName: gameMenuItem.props.pageName})) }
+        { carouselContents() }
       </Carousel>
     </Modal>
   );
@@ -65,7 +72,16 @@ function convertPageToIntegerAndValidate(page, pageNames) {
 function extractPageNames(itemsRenderProp, gameMenuContext) {
   const contextualizedItems = itemsRenderProp(gameMenuContext);
   if ( contextualizedItems.type === React.Fragment ) {
-    return contextualizedItems.props.children.map(child => child.props.pageName);
+    const numberKids = React.Children.count(contextualizedItems.props.children);
+    if ( numberKids > 1) {
+      return contextualizedItems.props.children.map(child => child.props.pageName);
+    } else if ( numberKids == 1) {
+      // For some reason, fragments with a single child returns not a singleton array, but just the element itself
+      return [contextualizedItems.props.children.props.pageName];
+    } else {
+      // Uuhh... what's goin on here
+      throw new Error(`extractPageNames received no items -- did you include at least one GameMenuItem in GameMenu?`);
+    }
   } else { /* items is a singleton item */
     return [contextualizedItems.props.pageName];
   }
