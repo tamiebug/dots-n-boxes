@@ -8,6 +8,7 @@ const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["P
 
 export function ControlPanel(props) {
   const { gameState, gameStateDispatch } = useContext(GameStateContext);
+  const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
 
@@ -32,6 +33,13 @@ export function ControlPanel(props) {
 
 
   useEffect(() => {
+    if (props.appSettings.savePreviousMatchSettings === true) {
+      const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
+      const previousGameSettings = JSON.parse(previousGameSettingsString);
+      setPreviousSettings({...DEFAULT_GAME_SETTINGS, ...previousGameSettings});
+    } else {
+      setPreviousSettings(DEFAULT_GAME_SETTINGS);
+    }
     applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS);
   }, [ ]);
 
@@ -60,9 +68,23 @@ export function ControlPanel(props) {
 
   return (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
-      {showStartMenu == true && <GameStartPanelMenu name="GameMenu" menuKiller={() => setShowStartMenu(false)}/>}
+      {showStartMenu == true && <GameStartPanelMenu 
+        name="GameMenu"
+        previousSettings={ previousSettings }
+        appSettings={ props.appSettings }
+        setGameSettingsAndKillMenu={(settings) => {
+          setShowStartMenu(false);
+          setPreviousSettings({...settings});
+          if (props.appSettings.savePreviousMatchSettings === true) {
+            const stringifiedSettings = JSON.stringify(settings);
+            window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
+          }
+          applySettings(gameStateDispatch, {...settings});
+        }}
+      />}
       {showAppSettingsMenu == true && <AppSettingsMenu 
-        name="AppSettingsMenu" appSettings= {props.appSettings} 
+        name="AppSettingsMenu"
+        appSettings= {props.appSettings}
         setAppSettingsAndKillMenu= {(settings) => {
           setShowAppSettingsMenu(false);
           props.setAppSettings(settings)
@@ -171,9 +193,9 @@ function GameStartPanelMenu(props) {
 
   useEffect(() => {
     const boardSizeSelectElement = document.getElementById('boardSizeSelect');
-    boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE);
+    boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE, props.previousSettings.boardHeight);
     const aiDifficultySelectElement = document.getElementById('aiDifficultySelect');
-    aiDifficultySelectElement && populateAiDifficultyList(aiDifficultySelectElement, ALLOWED_DIFFICULTIES);
+    aiDifficultySelectElement && populateAiDifficultyList(aiDifficultySelectElement, ALLOWED_DIFFICULTIES, props.previousSettings.cpuDifficulty);
   }, []);
 
   function handleFormEvent( event, type , gameMenuContext ) {
@@ -194,15 +216,14 @@ function GameStartPanelMenu(props) {
         event.preventDefault();
         break;
       case 'boardSizeSubmit':
-        applySettings(gameStateDispatch, {
+        event.preventDefault();
+        props.setGameSettingsAndKillMenu({
           boardHeight: parseInt(formData.boardSize || formData.boardHeight),
           boardWidth: parseInt(formData.boardSize || formData.boardWidth),
           playerNames: [...formData.playerNames],
           gameType: formData.gameType,
           cpuDifficulty: formData.cpuDifficulty,
         });
-        event.preventDefault();
-        props.menuKiller();
         break;
       case 'aiDifficultyChange':
         setFormData({...formData, cpuDifficulty: event.target.value });
@@ -216,7 +237,7 @@ function GameStartPanelMenu(props) {
   }
 
   return (
-    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ DEFAULT_GAME_SETTINGS } items={(gameMenuContext) => { 
+    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ props.previousSettings } items={(gameMenuContext) => { 
       const { formData, linkTo } = gameMenuContext;
       return (<>
         <GameMenuItem pageName="Home Page">
@@ -283,21 +304,21 @@ function GameStartPanelMenu(props) {
   )
 }
 
-function populateBoardSizeSelect(selectElement, min, max) {
-  const defaultSize = DEFAULT_GAME_SETTINGS.boardHeight;
+function populateBoardSizeSelect(selectElement, min, max, defaultValue) {
   for (let i=min; i<max; i++) {
     const optionElement = document.createElement("option");
     optionElement.textContent = `${i} x ${i}`;
     optionElement.value = i;
-    if (i==defaultSize) optionElement.selected = 'selected';
+    if (i==defaultValue) optionElement.selected = 'selected';
     selectElement.appendChild(optionElement); 
   }
 }
 
-function populateAiDifficultyList(selectElement, allowedTypes) {
+function populateAiDifficultyList(selectElement, allowedTypes, defaultValue) {
   for (const type of allowedTypes) {
     const optionElement = document.createElement("option");
     optionElement.textContent = type;
+    if (type==defaultValue) optionElement.selected = true;
     selectElement.appendChild(optionElement);
   }
 }
