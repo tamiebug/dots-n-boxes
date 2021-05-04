@@ -189,8 +189,6 @@ function AppSettingsMenu(props) {
 }
 
 function GameStartPanelMenu(props) {
-  const { gameStateDispatch } = useContext(GameStateContext);
-
   useEffect(() => {
     const boardSizeSelectElement = document.getElementById('boardSizeSelect');
     boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE, props.previousSettings.boardHeight);
@@ -215,6 +213,13 @@ function GameStartPanelMenu(props) {
         linkTo("Board Size");
         event.preventDefault();
         break;
+      case 'localPlayerGame':
+        setFormData({...formData, gameType: "local"});
+        linkTo("Choose Player Name");
+        break;
+      case 'aiPlayerGame':
+        setFormData({...formData, gameType: "CPU"});
+        linkTo("AI Difficulty")
       case 'useSavedSettings':
       case 'boardSizeSubmit':
         event.preventDefault();
@@ -230,7 +235,6 @@ function GameStartPanelMenu(props) {
         setFormData({...formData, cpuDifficulty: event.target.value });
         break;
       case 'aiDifficultySubmit':
-        setFormData({...formData, gameType: 'CPU' });
         linkTo("Choose Player Name");
         event.preventDefault();
         break;
@@ -254,10 +258,10 @@ function GameStartPanelMenu(props) {
 
         </GameMenuItem>
         <GameMenuItem pageName="Choose Opponent Type">
-          <a href="javascript:undefined" onClick={(event) => linkTo("AI Difficulty")} >
+          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'aiPlayerGame', gameMenuContext)} >
             <h3> Vs AI? </h3>
           </a>
-          <a href="javascript:undefined" onClick={(event) => linkTo("Choose Player Name")} >
+          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'localPlayerGame', gameMenuContext)} >
             <h3> Vs Local Player? </h3>
           </a>
         </GameMenuItem>

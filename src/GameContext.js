@@ -184,7 +184,7 @@ function setUpGame(settings, state) {
 			player1 = new LocalHumanPlayer(settings.playerNames[0]);
 			player2 = new LocalHumanPlayer(settings.playerNames[1]);
 			break;
-			case "CPU":
+		case "CPU":
 			player1 = new LocalHumanPlayer(settings.playerNames[0]);
 			switch (settings.cpuDifficulty) {
 				case "random":
