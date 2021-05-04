@@ -9,9 +9,20 @@ export function GameMenu(props) {
   // We need to instantiate props.items with something to extract pageNames
   const pageNames = extractPageNames(props.items, { formData });
   const [ currentMenuPage, setCurrentMenuPage ] = useState(convertPageToIntegerAndValidate(props.startingItemName, pageNames));
+  const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
 
   const context = { 
-    linkTo: (destination) => setCurrentMenuPage(convertPageToIntegerAndValidate(destination, pageNames)),
+    linkTo: (destination, undo) => {
+      if (undo) {
+        const [lastPage, ...restOfPages] = previousMenuPages;
+        setPreviousMenuPages(restOfPages);
+        setCurrentMenuPage(lastPage);
+      } else {
+        setPreviousMenuPages([currentMenuPage, ...previousMenuPages]); 
+        setCurrentMenuPage(convertPageToIntegerAndValidate(destination, pageNames))
+;
+      }
+    },
     menuName: props.name,
     formData,
     setFormData: (data) => setFormData(data),
@@ -20,7 +31,12 @@ export function GameMenu(props) {
 
   function carouselContents() {
     const kids = props.items(context).props.children;
-    const itemsMapping = gameMenuItem => GameMenuItem({children: gameMenuItem.props.children, pageName: gameMenuItem.props.pageName})
+    const itemsMapping = gameMenuItem => GameMenuItem({
+      children: gameMenuItem.props.children, 
+      pageName: gameMenuItem.props.pageName,
+      linkTo: context.linkTo,
+      showUndoButton: pageNames.length > 1,
+    })
     if (React.Children.count(kids) == 1) return itemsMapping(kids)
     else return kids.map(itemsMapping);
   }
@@ -38,15 +54,17 @@ export function GameMenu(props) {
 export function GameMenuItem(props) {
   return (
     <Carousel.Item>
-      <Modal.Header closeButton>
+      <Modal.Header>
         <Modal.Title> { props.pageName } </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         { props.children }
       </Modal.Body>
-      <Modal.Footer>
-       <Button variant="secondary">Close</Button> 
-      </Modal.Footer>
+      {props.showUndoButton && (
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => props.linkTo(undefined, true)}> Previous </Button>
+        </Modal.Footer>
+      )}
     </Carousel.Item>
   );
 }

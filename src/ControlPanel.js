@@ -196,7 +196,7 @@ function GameStartPanelMenu(props) {
     boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE, props.previousSettings.boardHeight);
     const aiDifficultySelectElement = document.getElementById('aiDifficultySelect');
     aiDifficultySelectElement && populateAiDifficultyList(aiDifficultySelectElement, ALLOWED_DIFFICULTIES, props.previousSettings.cpuDifficulty);
-  }, []);
+  }, [ ]);
 
   function handleFormEvent( event, type , gameMenuContext ) {
     if (gameMenuContext === undefined) throw new Error("handleFormEvent not given gameMenuContext");
@@ -215,6 +215,7 @@ function GameStartPanelMenu(props) {
         linkTo("Board Size");
         event.preventDefault();
         break;
+      case 'useSavedSettings':
       case 'boardSizeSubmit':
         event.preventDefault();
         props.setGameSettingsAndKillMenu({
@@ -247,6 +248,10 @@ function GameStartPanelMenu(props) {
           <a href="javascript:undefined" onClick={(event) => linkTo(2)}>
             <h3> Play Over Network </h3>
           </a>
+          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'useSavedSettings', gameMenuContext)}>
+            <h3> Use { props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings </h3>
+          </a>
+
         </GameMenuItem>
         <GameMenuItem pageName="Choose Opponent Type">
           <a href="javascript:undefined" onClick={(event) => linkTo("AI Difficulty")} >
