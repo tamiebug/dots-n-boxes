@@ -16,7 +16,7 @@ export function ControlPanel(props) {
   const [ player1, player2 ] = players;
   
   function onUndoClick() {
-    // TODO: Implement Undo functionality [currently disabled]
+    gameStateDispatch({type: 'attemptMoveTakeback'});
   };
 
   function onNewGame() {
@@ -113,7 +113,7 @@ export function ControlPanel(props) {
           <div className="row">
             <div className="col-sm-auto">
               <PanelButton
-                onMouseClick={() => this.onUndoClick()} 
+                onMouseClick={() => onUndoClick()}
                 bootstrapType="primary"
               >Undo Move</PanelButton>
             </div>

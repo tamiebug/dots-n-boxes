@@ -16,18 +16,19 @@ export const initialGameState = {
 	'players': [],							// [ Player ]
 	'playerActionCallbacks': [],// [ function ]
 	'currentPlayer': null,			// int
-	'numberMovesCompleted': -1,					// int
+	'numberMovesCompleted': -1,	// int
+	'moveHistory': [],					// [ { move: Move, player: int } ]
 	'gameBoardState': null,			// SquareGrid
 	'taggedGrid': null,					// TaggedGrid
 	'gameActive': false,				// boolean
 };
 
 export const gameStateReducer = function(state, action) {
-	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, gameActive } = state;
+	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, moveHistory, gameActive } = state;
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
 		case '__runBatchedActions':
-			validateAction(action, [{ key: 'batchedActions', 'instanceOf': Array }]);
+			validateAction(action, [{ key: 'batchedActions', 'insttanceOf': Array }]);
 			return action.batchedActions.reduce(gameStateReducer, {...state});
 
 		case 'incrementMatchNumber':
@@ -92,6 +93,7 @@ export const gameStateReducer = function(state, action) {
 			const boxesCompletedByMove = gameBoardState.boxesCompletedBy(action.move);
 
 			return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: [
+				{ type: 'addMoveToHistory', move: action.move, player: action.player },
 				{ type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByMove, initials: players[currentPlayer].getNameInitials()},
 				{ type: 'updateBoardState', move: action.move },
 				{ type: 'addScore', player: currentPlayer, points: boxesCompletedByMove.length },
@@ -100,12 +102,65 @@ export const gameStateReducer = function(state, action) {
 				{ type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0 },
 			]});
 
+		case 'addMoveToHistory':
+			validateAction(action, [{ key: 'player', typeOf: 'number'}, { key: 'move', 'instanceOf': Move }]);
+			return {...state, moveHistory: [...moveHistory, { move: action.move, player: action.player }]};
+
 		case 'attemptMoveTakeback':
-			validateAction(action, [{ key: 'player', typeOf: 'number' }]);
+			if (moveHistory.length < 1) throw new Error(`attemptMoveTakeback run with insufficient moves in history: ${moveHistory.length}`);
+			let newMoveHistory = [...moveHistory];
+			let {move: lastMove, player: lastPlayer} = newMoveHistory.pop();
+			let revertedGameBoardState = gameBoardState.copy();
+
+			if (players[lastPlayer] instanceof LocalHumanPlayer) {
+				revertedGameBoardState = revertedGameBoardState.remove(lastMove);
+				const boxesCompletedByMove = revertedGameBoardState.boxesCompletedBy(lastMove);
+
+				return gameStateReducer({...state, moveHistory: newMoveHistory, gameBoardState: revertedGameBoardState}, 
+					{ type: '__runBatchedActions', batchedActions: [
+						{ type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByMove, initials: ""},
+						{ type: 'addScore', player: lastPlayer, points: boxesCompletedByMove.length * -1 },
+						{ type: 'endCurrentTurn' },
+						{ type: 'updatePlayers' },
+						{ type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0},
+					]}
+				);
+			} else if ([RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU)) {
+				//let previousGameBoardState = gameBoardState.copy();
+				let boxesCompletedByLastMove = 0;
+				const reducerActions = [];
+
+				// Undo all of the AI's moves that went after your move.
+				while ( [RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU) ) {
+					debugger;
+					revertedGameBoardState = revertedGameBoardState.remove(lastMove);
+					boxesCompletedByLastMove = revertedGameBoardState.boxesCompletedBy(lastMove);
+
+					reducerActions.push({ type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByLastMove, initials: ""});
+					reducerActions.push({ type: 'addScore', player: lastPlayer, points: boxesCompletedByLastMove.length * -1});
+
+					let moveHistoryObject = newMoveHistory.pop();
+					lastMove = moveHistoryObject.move;
+					lastPlayer = moveHistoryObject.player;
+				}
+
+				// Undo your move (since the AI went after you, you didn't complete boxes that turn, we can skip that step)
+				revertedGameBoardState = revertedGameBoardState.remove(lastMove);
+				boxesCompletedByLastMove = revertedGameBoardState.boxesCompletedBy(lastMove);
+				
+				reducerActions.push({ type: 'endCurrentTurn'});
+				reducerActions.push({ type: 'updatePlayers' });
+				reducerActions.push({ type: 'startNextTurnIfAble', samePlayerGoes: true });
+
+				return gameStateReducer({...state, moveHistory: newMoveHistory, gameBoardState: revertedGameBoardState},
+					{type: '__runBatchedActions', batchedActions: reducerActions});
+			} else {
+				throw new Error(`attemptMoveTakeback not supported for players of type ${players[(action.player + 1) % 2].constructor.name}`);
+			}
 			break;
 
 		case 'setUpGame':
-			validateAction(action, [{key: 'settings', typeOf: 'object'}]);
+			validateAction(action, [{ key: 'settings', typeOf: 'object' }]);
 			validateSettings(action.settings);
 			return setUpGame(action.settings, state);
 
@@ -154,6 +209,7 @@ function setUpGame(settings, state) {
 		'playerActionCallbacks': [() => {}, () => {}],
 		'currentPlayer': 0,
 		'numberMovesCompleted': state.numberMovesCompleted + 1,
+		'moveHistory': [],
 		'matchNumber': state.matchNumber + 1,
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
 		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
