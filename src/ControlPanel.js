@@ -49,7 +49,7 @@ export function ControlPanel(props) {
     } else {
       setPreviousSettings(DEFAULT_GAME_SETTINGS);
     }
-    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS);
+    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS, props.appSettings);
   }, [ ]);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export function ControlPanel(props) {
             const stringifiedSettings = JSON.stringify(settings);
             window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
           }
-          applySettings(gameStateDispatch, {...settings});
+          applySettings(gameStateDispatch, {...settings}, props.appSettings);
         }}
       />}
       {showAppSettingsMenu == true && <AppSettingsMenu 
@@ -160,11 +160,19 @@ function PanelButton(props) {
 }
 
 function AppSettingsMenu(props) {
+  useEffect(() => {
+    if (!props.appSettings.debugMode) document.querySelector("#AppSettingsForm input[name='Show Move Ranges']").disabled = true;
+  }, [ ]);
+
   function handleFormEvent(event, type, gameMenuContext) {
     const { formData, setFormData } = gameMenuContext;
     switch (type) {
       case 'debugModeChanged':
+        document.querySelector("#AppSettingsForm input[name='Show Move Ranges']").disabled = !!formData.debugMode;
         setFormData({...formData, debugMode: !formData.debugMode});
+        break;
+      case 'showMoveRangesChanged':
+        setFormData({...formData, showMoveRanges: !formData.showMoveRanges});
         break;
       case 'savePreviousMatchSettingsChanged':
         setFormData({...formData, savePreviousMatchSettings: !formData.savePreviousMatchSettings});
@@ -189,6 +197,10 @@ function AppSettingsMenu(props) {
               <label> Debug Mode
                 <input type="checkbox" value="debugMode" name="Debug Mode" checked={ formData.debugMode } 
                   onClick={ event => handleFormEvent(event, 'debugModeChanged', gameMenuContext )}/>
+              </label>
+              <label> Show Move Ranges
+                <input type="checkbox" value="showMoveRanges" name="Show Move Ranges" checked={ formData.showMoveRanges }
+                  onClick={ event => handleFormEvent(event, 'showMoveRangesChanged', gameMenuContext )}/>
               </label>
             </fieldset>
             <fieldset>
@@ -238,7 +250,8 @@ function GameStartPanelMenu(props) {
         break;
       case 'aiPlayerGame':
         setFormData({...formData, gameType: "CPU"});
-        linkTo("AI Difficulty")
+        linkTo("AI Difficulty");
+        break;
       case 'useSavedSettings':
       case 'boardSizeSubmit':
         event.preventDefault();
@@ -351,7 +364,7 @@ function populateAiDifficultyList(selectElement, allowedTypes, defaultValue) {
   }
 }
 
-function applySettings(gameStateDispatch, settings) {
+function applySettings(gameStateDispatch, settings, appSettings) {
   const players = [0, 1];
   gameStateDispatch({ type: '__runBatchedActions', batchedActions: [
     { type: 'setUpGame', settings },
@@ -365,11 +378,20 @@ function applySettings(gameStateDispatch, settings) {
               if (coms.move.constructor.name !== Move.name) {
                 throw `player coms parsing error:  move type coms with no move field`;
               } else {
-                gameStateDispatch({ 
-                  type: 'attemptMove', 
-                  move: coms.move,
-                  player: playerNumber,
-                });
+                if (appSettings.showMoveRanges) {
+                  gameStateDispatch({ 
+                    type: 'attemptMove', 
+                    move: coms.move,
+                    range: coms.range,
+                    player: playerNumber,
+                  });
+                } else {
+                  gameStateDispatch({ 
+                    type: 'attemptMove', 
+                    move: coms.move,
+                    player: playerNumber,
+                  });
+                }
               }
               break;
             case playerEvents.AI_SHOW_CHAINS:

@@ -28,7 +28,7 @@ export const gameStateReducer = function(state, action) {
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
 		case '__runBatchedActions':
-			validateAction(action, [{ key: 'batchedActions', 'insttanceOf': Array }]);
+			validateAction(action, [{ key: 'batchedActions', 'instanceOf': Array }]);
 			return action.batchedActions.reduce(gameStateReducer, {...state});
 
 		case 'incrementMatchNumber':
@@ -93,7 +93,7 @@ export const gameStateReducer = function(state, action) {
 			const boxesCompletedByMove = gameBoardState.boxesCompletedBy(action.move);
 
 			return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: [
-				{ type: 'addMoveToHistory', move: action.move, player: action.player },
+				{ type: 'addMoveToHistory', move: action.move, range: action.range, player: action.player },
 				{ type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByMove, initials: players[currentPlayer].getNameInitials()},
 				{ type: 'updateBoardState', move: action.move },
 				{ type: 'addScore', player: currentPlayer, points: boxesCompletedByMove.length },
@@ -104,7 +104,11 @@ export const gameStateReducer = function(state, action) {
 
 		case 'addMoveToHistory':
 			validateAction(action, [{ key: 'player', typeOf: 'number'}, { key: 'move', 'instanceOf': Move }]);
-			return {...state, moveHistory: [...moveHistory, { move: action.move, player: action.player }]};
+			if (action.range) {
+				return {...state, moveHistory: [...moveHistory, { move: action.move, range: action.range, player: action.player }]};
+			} else {
+				return {...state, moveHistory: [...moveHistory, { move: action.move, player: action.player }]};
+			}
 
 		case 'attemptMoveTakeback':
 			if (moveHistory.length < 1) throw new Error(`attemptMoveTakeback run with insufficient moves in history: ${moveHistory.length}`);

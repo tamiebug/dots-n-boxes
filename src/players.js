@@ -232,7 +232,7 @@ export class Player {
 
   performMove(move_s) {
     if (!this._myTurn) throw new Error("performMove attempted to perform a move on wrong turn");
-    const doMove = (move) => { if (this._gameCallback) this._gameCallback({ type: playerEvents.SUBMIT_MOVE, move }) };
+    const doMove = (move, range) => { if (this._gameCallback) this._gameCallback({ type: playerEvents.SUBMIT_MOVE, move, range }) };
 
     if (Array.isArray(move_s)) {
       if (!(move_s.length > 0)) {
@@ -240,7 +240,7 @@ export class Player {
       } else if (move_s.some(move => !(move instanceof Move))) {
         throw new Error("performMove received an array containing some non-move Objects");
       }
-      doMove(move_s[Math.floor(Math.random() * move_s.length)]);
+      doMove(move_s[Math.floor(Math.random() * move_s.length)], move_s);
       return;
     } else if (!(move_s instanceof Move)) {
       if (move_s == null) {
@@ -252,7 +252,7 @@ export class Player {
       }
     } else {
       // move_s instanceof Move == true
-      doMove(move_s);
+      doMove(move_s, [move_s]);
     } 
     // performMove END
   }
