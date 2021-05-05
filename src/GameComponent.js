@@ -202,7 +202,6 @@ function GameBoardSquare(props) {
 	let squareStyle = {};
 	const isInChain = taggedGrid.at(props.row, props.column).taggedChain;
 	if (isInChain) {
-		console.log(isInChain.color);
 		squareStyle.backgroundColor = isInChain.color;
 	}
 

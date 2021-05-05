@@ -67,9 +67,8 @@ export function ControlPanel(props) {
       } else /* player two won */ {
         window.alert(`${players[1]._name} has won!`);
       }
-      if (window.confirm(`Would you like to play again?`)) {
-        onNewGame();
-      } 
+      if (props.appSettings.debugMode && window.confirm(`Would you like to show JSON of last match's moves?`)) printMovesJSON();
+      if (window.confirm(`Would you like to play again?`)) onNewGame();
     }
   }, [ gameActive ]);
 
