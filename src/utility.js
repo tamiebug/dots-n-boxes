@@ -1,3 +1,5 @@
+import { TaggedChain } from "./players.js"
+
 export class SquareGrid {
   /* SquareGrid is a representation of the current Dots and Boxes
    * board game state along with various helper methods.  Contains constructor,
@@ -397,6 +399,15 @@ export function loadSquareGridFromJSON(filepath) {
   const moves = JSON.moveHistory.map(moveJSON => Move.fromJSON(moveJSON));
   let currentGrid = new SquareGrid(JSON.nRows, JSON.nColumns);
   return moves.map(move => currentGrid = currentGrid.update(move));// intentional assn.
+}
+
+export function loadMoveHistoryFromJSON(filepath) {
+  return require(filepath).map(entry => ({
+      move: Move.fromJSON(entry.move),
+      range: entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
+      player: entry.player
+    })
+  );
 }
 
 export function argmax(array) {

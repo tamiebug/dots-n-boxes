@@ -437,9 +437,9 @@ export class BasicAI extends Player {
 
     const strategyPromise = new Promise((resolve, reject) => {
       for (const moveSuggester of this.strategy) {
-        console.log(`executing strategy: ${moveSuggester.name}`);
+        //console.log(`executing strategy: ${moveSuggester.name}`);
         const moves = moveSuggester(taggedChains, this._currentState);
-        console.log(`result of execution: ${moves.map(move=>move.toString())}`);
+        //console.log(`result of execution: ${moves.map(move=>move.toString())}`);
         if (!(moves instanceof Array)) {
           throw new Error(`a moveSuggester, ${moveSuggester.name} did not return an array of Move.  All moveSuggesters should return Move[], even if empty`);
         }

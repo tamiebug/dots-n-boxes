@@ -1,0 +1,267 @@
+[
+  {
+    "move": {
+      "r": 0,
+      "c": 1,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 1,
+        "_isHoriz": false
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 1,
+      "c": 1,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 0,
+        "c": 0,
+        "_isHoriz": false
+      },
+      {
+        "r": 0,
+        "c": 1,
+        "_isHoriz": true
+      },
+      {
+        "r": 0,
+        "c": 2,
+        "_isHoriz": false
+      },
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": false
+      },
+      {
+        "r": 1,
+        "c": 1,
+        "_isHoriz": true
+      },
+      {
+        "r": 1,
+        "c": 1,
+        "_isHoriz": false
+      },
+      {
+        "r": 1,
+        "c": 2,
+        "_isHoriz": false
+      },
+      {
+        "r": 2,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 2,
+        "c": 1,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
+      "r": 0,
+      "c": 2,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 2,
+        "_isHoriz": false
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 0,
+      "c": 0,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 0,
+        "c": 0,
+        "_isHoriz": false
+      },
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": false
+      },
+      {
+        "r": 1,
+        "c": 2,
+        "_isHoriz": false
+      },
+      {
+        "r": 2,
+        "c": 0,
+        "_isHoriz": true
+      },
+      {
+        "r": 2,
+        "c": 1,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
+      "r": 0,
+      "c": 1,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 1,
+        "_isHoriz": true
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 1,
+      "c": 1,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 1,
+        "c": 1,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
+      "r": 1,
+      "c": 0,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": false
+      },
+      {
+        "r": 2,
+        "c": 0,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
+      "r": 0,
+      "c": 0,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 0,
+        "c": 0,
+        "_isHoriz": true
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 2,
+      "c": 0,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 2,
+        "c": 0,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
+      "r": 1,
+      "c": 0,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": true
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 2,
+      "c": 1,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 2,
+        "c": 1,
+        "_isHoriz": true
+      }
+    ],
+    "player": 0
+  },
+  {
+    "move": {
+      "r": 1,
+      "c": 2,
+      "_isHoriz": false
+    },
+    "range": [
+      {
+        "r": 1,
+        "c": 2,
+        "_isHoriz": false
+      }
+    ],
+    "player": 1
+  }
+]
