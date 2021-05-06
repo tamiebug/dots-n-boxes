@@ -2,6 +2,8 @@ import { Move, SquareGrid } from "./utility.js"
 
 export const playerEvents = Object.freeze({
   SUBMIT_MOVE:  Symbol("submit move"),
+  AI_SHOW_CHAINS: Symbol("show chains"),
+  AI_HIDE_CHAINS: Symbol("hide chains"),
 });
 
 /*******************************************************************************
@@ -13,7 +15,7 @@ export const playerEvents = Object.freeze({
 
 export class TaggedChain {
   /**
-   * Constructor for TaggedChain class.  Class representing ac hain of Moves that can be done one after another in repeitition 
+   * Constructor for TaggedChain class.  Class representing a chain of Moves that can be done one after another in repetition 
    * 
    * @param {[Move]} moves          - An array of moves to construct TaggedChain from.  May be empty
    * @param {Boolean} active        - Boolean describing whether chain of Moves can be completed without relinquishing turn, starting from one of the ends
@@ -194,11 +196,11 @@ export class Player {
     this._moveDelay = moveDelay;
     this.score = 0;
   }
-
+  
   startTurn() {
     // NOTE:  If generateNextMove() ever becomes a slow method for some AI players and the UI for
     // the game is changed to become more responsive, consider spinning off a Web Worker for this
-    this._myTurn = true; 
+    this._myTurn = true;
     this.generateNextMove();
   }
 
@@ -419,7 +421,7 @@ export class BasicAI extends Player {
     //ignore
     return;
   }
-  
+
   generateNextMove() {
     if (this._currentState == null) {
       throw new Error("BasicAI generateNextMove called with null _currentState");
@@ -435,15 +437,17 @@ export class BasicAI extends Player {
 
     const strategyPromise = new Promise((resolve, reject) => {
       for (const moveSuggester of this.strategy) {
+        console.log(`executing strategy: ${moveSuggester.name}`);
         const moves = moveSuggester(taggedChains, this._currentState);
+        console.log(`result of execution: ${moves.map(move=>move.toString())}`);
         if (!(moves instanceof Array)) {
           throw new Error(`a moveSuggester, ${moveSuggester.name} did not return an array of Move.  All moveSuggesters should return Move[], even if empty`);
         }
-  
+
         if (moves.some(move => !(move instanceof Move))) {
           throw new Error(`Error in ${moveSuggester.name}, returned a non-move Array`);
         }
-  
+
         if (moves.length > 0) {
           resolve(moves);
           break;
@@ -451,7 +455,7 @@ export class BasicAI extends Player {
       }
     });
 
-    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => {
+    Promise.all([timeoutPromise, strategyPromise]).then(([_, moves]) => {
       this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS })
       this.performMove(moves);
     });
@@ -707,6 +711,26 @@ function fallthroughMovesFunction(taggedChains) {
 
 function timeoutPromise(delay) {
   return new Promise((resolve, reject) => setTimeout(resolve, delay));
+}
+
+function turnTaggedChainsIntoBoxArrays(taggedChains) {
+  const findBox = (move1, move2) => {
+    return [
+      Math.min(move1.c, move2.c),
+      Math.min(move1.r, move2.r),
+    ];
+  }
+  return taggedChains.map(taggedChain => {
+    const boxChain = [];
+    const chainLength = taggedChain.moves.length;
+    for (let i=0; i < chainLength - 1; i++) {
+      boxChain.push(findBox(taggedChain.moves[i], taggedChain.moves[i+1]));
+    }
+    if (taggedChain.isCyclical()) boxChain.push(findBox(taggedChain.moves[chainLength - 1], taggedChain.moves[0]));
+    if (chainLength > 0) boxChain.push(...gameBoard.boxesCompletedBy(taggedChain.moves[0]));
+    if (chainLength > 1) boxChain.push(...gameBoard.boxesCompletedBy(taggedChain.moves[chainLength - 1]));
+    return boxChain;
+  })
 }
 
 export const testables = { groupMovesIntoTaggedChains, findCompletableSquareMakers}

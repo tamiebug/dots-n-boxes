@@ -199,9 +199,16 @@ function GameBoardSquare(props) {
 	const { gameState } = useContext(GameStateContext);
 	const { gameBoardState, taggedGrid } = gameState;
 
+	let squareStyle = {};
+	const isInChain = taggedGrid.at(props.row, props.column).taggedChain;
+	if (isInChain) {
+		console.log(isInChain.color);
+		squareStyle.backgroundColor = isInChain.color;
+	}
+
 	const squareOwnerInitials = taggedGrid.at(props.row, props.column).initials;
 	return (
-		<div className="gameBoardSquare">
+		<div className="gameBoardSquare" style={ squareStyle }>
 			<SelectionCircle key={3} handleMouseEvent={ (event) => props.handleMouseEvent( event, props.row, props.column) } />
 			<div key={0} className="dot" />
 			{ gameBoardState.hasLineDownFrom(props.row, props.column) && <div key={4} className="vertLine" /> }

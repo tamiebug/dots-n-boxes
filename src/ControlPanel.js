@@ -372,6 +372,17 @@ function applySettings(gameStateDispatch, settings) {
                 });
               }
               break;
+            case playerEvents.AI_SHOW_CHAINS:
+              gameStateDispatch({
+                type: 'showChains',
+                chains: coms.chains,
+              });
+              break;
+            case playerEvents.AI_HIDE_CHAINS:
+              gameStateDispatch({
+                type: 'hideChains',
+              });
+              break;
             default:
               throw `unrecognized player com type: ${coms.type}`;
         }},

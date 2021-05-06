@@ -170,6 +170,15 @@ export const gameStateReducer = function(state, action) {
 		case 'deactivateGame':
 			return {...state, 'gameActive': false};
 		
+		case 'showChains':
+			validateAction(action, [{ key: 'chains', 'instanceOf': Array}]);
+			const boxTags = renderBoxChainsIntoTags(action.chains);
+			return {...state, taggedGrid: taggedGrid.clearTagForAll("taggedChain").update(boxTags)};
+		case 'hideChains':
+			// set the CSS rule somehow... maybe we don't need this and it happens as part of round end/start?   Idk, tbd.
+			return {...state};
+			break;
+		
 		default:
 			throw `gameStateReducer received an invalid action type ${action.type}`;
 			break;
@@ -234,6 +243,21 @@ function validateSettings(settings) {
 		throw `validateSettings: invalid boardHeight, value ${settings.boardHeight} passed in`;
 	}
 	return;
+}
+
+function renderBoxChainsIntoTags(boxChains) {
+	const tags = [];
+
+	let currentHue = 360 * Math.random();
+	const hueStep = 360 / boxChains.length;
+
+	for (const boxChain of boxChains) {
+		currentHue = (currentHue + hueStep) % 360;
+		for (const box of boxChain) {
+			tags.push({ column: box[0], row: box[1], values: { taggedChain: { color: `hsl(${currentHue}, 50%, 50%)` }}});;
+		}
+	}
+	return tags;
 }
 
 function validateAction(action, expectations) {

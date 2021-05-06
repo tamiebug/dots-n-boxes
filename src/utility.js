@@ -307,7 +307,7 @@ export class Move {
 export class TaggedGrid {
   constructor(rows, columns, _givenTaggedGrid) {
     if (_givenTaggedGrid) {
-      this.taggedGrid = _givenTaggedGrid;
+      this.taggedGrid = _givenTaggedGrid.taggedGrid;
       this.nRows = _givenTaggedGrid.nRows;
       this.nColumns = _givenTaggedGrid.nColumns;
     } else {
@@ -326,17 +326,18 @@ export class TaggedGrid {
 
   // Ensure updated grid !=== old grid for React
   update(valuesWithCoordinates) {
-    const retVal = new TaggedGrid(undefined, undefined, this.taggedGrid);
+    const retVal = new TaggedGrid(undefined, undefined, this);
     retVal.__update(valuesWithCoordinates);
     return retVal;
   }
 
   clearTagForAll(tag) {
-    const newGrid = new TaggedGrid(undefined, undefined, this.taggedGrid);
-    for (const r = 0; r < this.nRows; r++) {
-      for (const c = 0; c < this.nColumns; c++) {
+    const newGrid = new TaggedGrid(undefined, undefined, this);
+
+    for (let r = 0; r < this.nRows; r++) {
+      for (let c = 0; c < this.nColumns; c++) {
         // Yeah, I just destructured into a computed property name and already-existing variable using assignment-without-declaration syntax.  Bite me, Andy
-        ({[tag]: _, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
+        if (newGrid.taggedGrid.tag) ({[tag]: _, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
       }
     }
     return newGrid
