@@ -713,7 +713,7 @@ function timeoutPromise(delay) {
   return new Promise((resolve, reject) => setTimeout(resolve, delay));
 }
 
-function turnTaggedChainsIntoBoxArrays(taggedChains) {
+function turnTaggedChainsIntoBoxArrays(taggedChains, gameBoard) {
   const findBox = (move1, move2) => {
     return [
       Math.min(move1.c, move2.c),

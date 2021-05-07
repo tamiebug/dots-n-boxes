@@ -95,52 +95,41 @@ describe('BasicAI', () => {
   const testSuite = ([
     ['MoveHistory1.json', [3,3]],
   ])
+ 
+  const loadedMoveHistories = testSuite.map(([filename, dimensions]) => (
+    {filename, dimensions, 'moveHistory': loadMoveHistoryFromJSON(`./test_fixtures/${filename}`)}));
 
-  // TODO: Don't forget to provide a timeout for this  as the third argument, after the arrow functiond describing the test.
-  test.each(testSuite)(' selects the correct ranges of moves on game described by %s, on a %p dimensional gameBoard', (moveHistoryJSON, dimensions, done) => {
-    // Should remove this once I know done works as expected
-    if (typeof done !== 'function') {
-      throw new Error("test suite did not get a function as done!! quick, abandon ship");
+  // We want to reconstruct game states for every entry of moveHistoryEntry so that we can test every expected move set on every turn concurrently
+  const testData = [];
+  for(const loadedMoveHistory of loadedMoveHistories) {
+    const { filename, dimensions, moveHistory } = loadedMoveHistory;
+
+    let gameState = new SquareGrid(...dimensions);
+    for (const [index, moveHistoryEntry] of moveHistory.entries()) {
+      const newGameState = gameState.update(moveHistoryEntry.move);
+      if (moveHistoryEntry.player == 1) {
+        // ASSUMPTION: AI is player 1, non-AI is player 0
+        testData.push([ index, filename, moveHistoryEntry.range, gameState ]);
+      }
+      gameState = newGameState;
     }
+  }
 
-    /* Synopsis: We iterate through moveHistory, automatically applying the moves that don't belong to the AI agent, but waiting to apply those that do
-                 -- we want to check this second category of moves, and see that the AI spits out the correct set of moves to randomly choose from.
-    */
+  test.concurrent.each(testData)('selects the correct range of moves on turn %i from %s', (index, filename, range, gameState) => {
     const basicAI = new BasicAI("BasicAI Test Friend", 0);
 
-    let moveHistory = loadMoveHistoryFromJSON(`./test_fixtures/${moveHistoryJSON}`);
-    let gameBoardState = new SquareGrid(...dimensions);
-    let lastMoveHistoryItem = null;
+    const aiTestingPromise = new Promise( (resolve, reject) => {
+      basicAI.registerCallback( (call) => {
+        if (call.type !== playerEvents.SUBMIT_MOVE) return;
+        expect(call.range).toBeSameSetOfMoves(range);
+        resolve(call.range);
+      } );    
+      basicAI.updatePlayerState( gameState );
+      basicAI.startTurn();
+    });
 
-    const advanceToNextMove = () => {
-      lastMoveHistoryItem = moveHistory.shift();
-      if (lastMoveHistoryItem === undefined) done();
-    }
-
-    const advanceToNextAiMove = () => {
-      advanceToNextMove();
-      while( lastMoveHistoryItem.player == 0 ) {
-        gameBoardState = gameBoardState.update(lastMoveHistoryItem.move);
-        advanceToNextMove();
-      }
-    }
-
-    const playerCallback = (call) => {
-      if (call.type !== playerEvents.SUBMIT_MOVE) return;
-      // We always advanceToNextAiMove() before callback, so we can be sure that lastMOveHistoryItem is a player==1 move, hence a CPU move.
-      expect(call.range).toBeSameSetOfMoves(lastMoveHistoryItem.range);
-      gameBoardState = gameBoardState.update(lastMoveHistoryItem.move);
-      
-      advanceToNextAiMove();
-      basicAI.updatePlayerState( gameBoardState );
-      basicAI.startTurn(); // This should generate another callback call... can we do this non-recursively?
-    }
-
-    advanceToNextAiMove();
-    basicAI.updatePlayerState( gameBoardState );
-    basicAI.registerCallback( playerCallback );
-    basicAI.startTurn();
-  },)
+    return aiTestingPromise.then(aiRange => expect(aiRange).toBeSameSetOfMoves(range));
+  });
 });
 
 expect.extend({toBeSameSetOfMoves(received, arrayOfMoves) {
