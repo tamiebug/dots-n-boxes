@@ -36,8 +36,8 @@ export function GameMenu(props) {
       pageName: gameMenuItem.props.pageName,
       linkTo: context.linkTo,
       showUndoButton: pageNames.length > 1,
-    })
-    if (React.Children.count(kids) == 1) return itemsMapping(kids)
+    });
+    if (React.Children.count(kids) == 1) return itemsMapping(kids);
     else return kids.map(itemsMapping);
   }
 

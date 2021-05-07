@@ -86,7 +86,7 @@ describe('TaggedChain', () => {
       return Object.assign(new TaggedChain, json, movesObj);
     };
     test.each([[cyclicalTaggedChainA], [acyclicalTaggedChainA], [acyclicalTaggedChainB]])('properly identifies chains of moves reconstituted from JSON to be equal to themselves', (chain) => {
-      expect(chain.isEquivalentTo(toAndFromJSON(chain))).toBe(true)
+      expect(chain.isEquivalentTo(toAndFromJSON(chain))).toBe(true);
     });
   });
 });
@@ -94,7 +94,7 @@ describe('TaggedChain', () => {
 describe('BasicAI', () => {
   const testSuite = ([
     ['MoveHistory1.json', [3,3]],
-  ])
+  ]);
  
   const loadedMoveHistories = testSuite.map(([filename, dimensions]) => (
     {filename, dimensions, 'moveHistory': loadMoveHistoryFromJSON(`./test_fixtures/${filename}`)}));
@@ -146,14 +146,14 @@ expect.extend({toBeSameSetOfMoves(received, arrayOfMoves) {
     return {
       pass: false,
       message: () => `Expected received length of possible moves, ${received.length}, to equal length of arrayOfMoves ${arrayOfMoves.length}`,
-    }
+    };
   }
 
   if (received.length == 0 && arrayOfMoves.length == 0) {
     return {
       pass: true,
       message: () => `Expected received length of possible moves and arrayOfMoves to not both be zero`
-    }
+    };
   }
 
   const taggedReceivedMoves = received.map(move => ({move, matched: false}));
@@ -189,12 +189,12 @@ expect.extend({toBeSameSetOfMoves(received, arrayOfMoves) {
     return {
       pass: false,
       message: () => `Expected received and arrayOfMoves to have the same moves.  There were ${unmatchedMoves.length} unmatched moves between the two: ${unmatchedMoves}`,
-    }
+    };
   } else {
     return {
       pass: true,
       message: () => 'Expected received and arrayOfMoves to not be perfectly matched',
-    }
+    };
   }
 }});
 
@@ -212,14 +212,14 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
     return {
       pass: false,
       message: () => `Expected received length, ${received.length}, to equal taggedChainList length ${taggedChainList.length}`
-    }
+    };
   }
 
   if (received.length == 0 && taggedChainList.length == 0) {
     return {
       pass : true,
       message : () => `Expected received length and taggedChainList length to not both be zero`
-    }
+    };
   }
 
   let receivedCopy = [...received];
@@ -248,7 +248,7 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
       pass : false,
       message : () => `Expected value and taggedChainList to have the same TaggedChains.  However, 
         ${receivedCopyLength} chains in value and ${taggedChainListCopyLength} chains in taggedChainList could not be matched.` 
-      }
+      };
     }
 }});
 

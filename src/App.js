@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { hot } from "react-hot-loader"
+import { hot } from "react-hot-loader";
 import "./App.css";
 import 'bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { Game } from "./GameComponent.js";
 
@@ -32,7 +32,7 @@ export function App(props) {
 		<div className="App">
 			<Game appSettings={ appSettings } setAppSettings={ setAppSettings }/>
 		</div>
-	)
+	);
 }
 
 export default hot(module)(App);

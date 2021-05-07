@@ -38,19 +38,19 @@ export const gameStateReducer = function(state, action) {
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'callback', typeOf: 'function' }]);
 			players[action.player].registerCallback(action.callback);
 			return {...state,
-				playerActionCallbacks: playerActionCallbacks.map((callback, _index) => { return (_index == action.player) ? action.callback : callback })}	
+				playerActionCallbacks: playerActionCallbacks.map((callback, _index) => { return (_index == action.player) ? action.callback : callback; })};	
 
 		case 'addScore':
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'points', typeOf: 'number' }]);
 			if (action.player > players.length || action.player < 0) throw `gameStateReducer dispatch failure: 'addScore' called on player number ${action.player}`;
 			if (action.points == 0) return {...state};
 			return {...state, players: players.map((_player, index) => {
-				return (index == action.player) ? _player.addScore(action.points).registerCallback(playerActionCallbacks[action.player]) : _player
+				return (index == action.player) ? _player.addScore(action.points).registerCallback(playerActionCallbacks[action.player]) : _player;
 			})};
 
 		case 'updatePlayers':
 			players.forEach((player) =>	player.updatePlayerState(gameBoardState));
-			return {...state}
+			return {...state};
 
 		case 'updateOwnershipGrid':
 			validateAction(action, [{ key: 'completedBoxes', 'instanceOf': Array }, { key: 'initials', typeOf: 'string' }]);
@@ -66,7 +66,7 @@ export const gameStateReducer = function(state, action) {
 
 		case 'updateBoardState':
 			validateAction(action, [{ key: 'move', 'instanceOf': Move }]);
-			return {...state, gameBoardState: gameBoardState.update(action.move)}
+			return {...state, gameBoardState: gameBoardState.update(action.move)};
 
 		case 'endCurrentTurn':
 			players[currentPlayer].endTurn();
@@ -76,12 +76,12 @@ export const gameStateReducer = function(state, action) {
 			validateAction(action, [{ key: 'samePlayerGoes', typeOf:  'boolean' }]);
 			
 			// Are we able to start the next turn?  We know this if score is correct.
-			const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1)
+			const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
 			const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
 			
 			if (pointsScored == maxPointsPossible) {
 				// TODO: potentially change some other state variable indicating winner in future?
-				return gameStateReducer({...state}, { type: 'deactivateGame' })
+				return gameStateReducer({...state}, { type: 'deactivateGame' });
 			} // else
 			return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
 
@@ -227,12 +227,12 @@ function setUpGame(settings, state) {
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
 		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
 		'gameActive': true,
-	}
+	};
 }
 
 function validateSettings(settings) {	
 	if (!settings.playerNames || settings.playerNames.length !== NUMBER_PLAYERS) {
-		throw `validateSettings: invalid number of player names in settings.playerNames, or nonexistent player name array; given array is ${settings.playerNames}`
+		throw `validateSettings: invalid number of player names in settings.playerNames, or nonexistent player name array; given array is ${settings.playerNames}`;
 	}
 	if (ALLOWED_GAME_TYPES.indexOf(settings.gameType) == -1) {
 		throw `validateSettings: invalid gameType, only allowed types are ${ALLOWED_GAME_TYPES}, received ${settings.gameType}`;

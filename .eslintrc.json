@@ -1,0 +1,26 @@
+{
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "jest/globals": true,
+    "es6": true,
+    "browser": true,
+    "amd": true,
+    "node": true,
+    "jasmine": true
+  },
+  "plugins": [
+    "react",
+    "jest"
+  ],
+  "rules": {
+    "no-undef": [ 1 ],
+    "semi": 2
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { GameStateContext, ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
-import { GameMenu, GameMenuItem } from './GameMenu.js'
+import { GameMenu, GameMenuItem } from './GameMenu.js';
 import { playerEvents } from "./players.js";
 import { Move } from "./utility.js";
 
@@ -31,7 +31,7 @@ export function ControlPanel(props) {
     jsonWindow.document.open();
     jsonWindow.document.write('<html><body><pre>' + jsonText + '</pre></body></html>');
     jsonWindow.document.close();
-    jsonWindow.focus()
+    jsonWindow.focus();
   }
 
 	useEffect(() => {
@@ -54,7 +54,7 @@ export function ControlPanel(props) {
 
   useEffect(() => {
     if (gameBoardState == null) return;
-    const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1)
+    const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
     const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
     
     if (pointsScored == maxPointsPossible) {
@@ -95,7 +95,7 @@ export function ControlPanel(props) {
         appSettings= {props.appSettings}
         setAppSettingsAndKillMenu= {(settings) => {
           setShowAppSettingsMenu(false);
-          props.setAppSettings(settings)
+          props.setAppSettings(settings);
         }}
       />}
       <div className="row">
@@ -341,7 +341,7 @@ function GameStartPanelMenu(props) {
         </GameMenuItem>
       </>);
     }}/>
-  )
+  );
 }
 
 function populateBoardSizeSelect(selectElement, min, max, defaultValue) {

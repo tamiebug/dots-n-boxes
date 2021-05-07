@@ -1,4 +1,4 @@
-import { Move, SquareGrid } from "./utility.js"
+import { Move, SquareGrid } from "./utility.js";
 
 export const playerEvents = Object.freeze({
   SUBMIT_MOVE:  Symbol("submit move"),
@@ -232,7 +232,7 @@ export class Player {
 
   performMove(move_s) {
     if (!this._myTurn) throw new Error("performMove attempted to perform a move on wrong turn");
-    const doMove = (move, range) => { if (this._gameCallback) this._gameCallback({ type: playerEvents.SUBMIT_MOVE, move, range }) };
+    const doMove = (move, range) => { if (this._gameCallback) this._gameCallback({ type: playerEvents.SUBMIT_MOVE, move, range }); };
 
     if (Array.isArray(move_s)) {
       if (!(move_s.length > 0)) {
@@ -246,7 +246,7 @@ export class Player {
       if (move_s == null) {
         throw new Error("performMove received null or undefined Move");
       } else if (move_s instanceof Object) {
-        throw new Error("performMove received a non-Move object")
+        throw new Error("performMove received a non-Move object");
       } else {
         throw new Error("performMove did not receive an object at all, let alone a Move object");
       }
@@ -456,7 +456,7 @@ export class BasicAI extends Player {
     });
 
     Promise.all([timeoutPromise, strategyPromise]).then(([_, moves]) => {
-      this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS })
+      this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS });
       this.performMove(moves);
     });
 
@@ -652,7 +652,7 @@ function takeFirstActive3ChainMoves(taggedChains, currentState) {
     const completingMoves = currentState.findSquareCompletingMoves(doublyActive3_chains[0].moves);
 
     const nonCompletingMoves = doublyActive3_chains[0].moves.filter(move => {
-      for (completingMove in completingMoves) {
+      for (let completingMove in completingMoves) {
         if (completingMove.equals(move)) return false;
       }
       return true;
@@ -719,7 +719,7 @@ function turnTaggedChainsIntoBoxArrays(taggedChains, gameBoard) {
       Math.min(move1.c, move2.c),
       Math.min(move1.r, move2.r),
     ];
-  }
+  };
   return taggedChains.map(taggedChain => {
     const boxChain = [];
     const chainLength = taggedChain.moves.length;
@@ -730,7 +730,7 @@ function turnTaggedChainsIntoBoxArrays(taggedChains, gameBoard) {
     if (chainLength > 0) boxChain.push(...gameBoard.boxesCompletedBy(taggedChain.moves[0]));
     if (chainLength > 1) boxChain.push(...gameBoard.boxesCompletedBy(taggedChain.moves[chainLength - 1]));
     return boxChain;
-  })
+  });
 }
 
-export const testables = { groupMovesIntoTaggedChains, findCompletableSquareMakers}
+export const testables = { groupMovesIntoTaggedChains, findCompletableSquareMakers};

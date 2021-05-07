@@ -1,4 +1,4 @@
-import { TaggedChain } from "./players.js"
+import { TaggedChain } from "./players.js";
 
 export class SquareGrid {
   /* SquareGrid is a representation of the current Dots and Boxes
@@ -339,10 +339,10 @@ export class TaggedGrid {
     for (let r = 0; r < this.nRows; r++) {
       for (let c = 0; c < this.nColumns; c++) {
         // Yeah, I just destructured into a computed property name and already-existing variable using assignment-without-declaration syntax.  Bite me, Andy
-        if (newGrid.taggedGrid.tag) ({[tag]: _, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
+        if (newGrid.taggedGrid.tag) ({[tag]: undefined, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
       }
     }
-    return newGrid
+    return newGrid;
   }
 
   at(row, column) {
@@ -412,6 +412,6 @@ export function loadMoveHistoryFromJSON(filepath) {
 
 export function argmax(array) {
   if (array.length == 0) return -1;
-  const first_maximum = array[array.reduce((i_max, x, i, array) => { x > array[i_max] ? i : i_max }, 0)];
-  return [...array.keys()].filter(i => arr[i] === first_maximum);
+  const first_maximum = array[array.reduce((i_max, x, i, array) => { x > array[i_max] ? i : i_max; }, 0)];
+  return [...array.keys()].filter(i => array[i] === first_maximum);
 }
