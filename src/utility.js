@@ -12,7 +12,6 @@ export class SquareGrid {
     this.nRows = nRows || 2;
     this.nColumns = nColumns || 2;
     this.squares = [];
-    this.moveHistory = [];
     for (let r = 0; r < nRows; r++) {
       let row = [];
       for (let c = 0; c < nColumns; c++) {
@@ -37,7 +36,6 @@ export class SquareGrid {
       newGrid.nRows = this.nRows;
       newGrid.nColumns = this.nColumns;
       newGrid.squares = this.squares.map((row) => row.map((square) => [...square]));
-      newGrid.moveHistory = [...this.moveHistory, move];
       newGrid.squares[move.r][move.c][move.isHorizontal() ? 0 : 1] = true;
       return newGrid;
     } else {
@@ -52,7 +50,6 @@ export class SquareGrid {
       newGrid.nColumns = this.nColumns;
       newGrid.squares = this.squares.map((row) => row.map((square) => [...square]));
       newGrid.squares[move.r][move.c][move.isHorizontal() ? 0 : 1] = false;
-      newGrid.moveHistory = this.moveHistory.slice(0, -1);
       return newGrid;
     } else {
       return null;
@@ -123,14 +120,6 @@ export class SquareGrid {
       }
     }
     return moves;
-  }
-
-  returnLastMove() {
-    if (this.moveHistory.length > 0) {
-      return this.moveHistory[this.moveHistory.length - 1];
-    } else {
-      return null;
-    }
   }
 
   boxesCompletedBy(move) {
@@ -237,6 +226,20 @@ export class SquareGrid {
 
   getDimensions() {
     return { 'rows': this.nRows, 'columns': this.nColumns };
+  }
+
+  toJSON() {
+    return {
+      nRows: this.nRows,
+      nColumns: this.nColumns,
+      squares: this.squares,
+    };
+  }
+
+  fromJSON(json) {
+    const retGrid = new SquareGrid(json.nRows, json.nColumns);
+    retGrid.squares = json.squares;
+    return retGrid;
   }
 }
 
@@ -392,6 +395,7 @@ export function loadTaggedChainsFromJSON(filepath) {
   );
 }
 
+/* TODO: To be changed to new format with separate MoveHistory */
 export function loadSquareGridFromJSON(filepath) {
   // Creates an array of SquareGrids to use for testing from a final
   // SquareGrid gamestate saved as JSON
