@@ -395,16 +395,6 @@ export function loadTaggedChainsFromJSON(filepath) {
   );
 }
 
-/* TODO: To be changed to new format with separate MoveHistory */
-export function loadSquareGridFromJSON(filepath) {
-  // Creates an array of SquareGrids to use for testing from a final
-  // SquareGrid gamestate saved as JSON
-  const JSON = require(filepath);
-  const moves = JSON.moveHistory.map(moveJSON => Move.fromJSON(moveJSON));
-  let currentGrid = new SquareGrid(JSON.nRows, JSON.nColumns);
-  return moves.map(move => currentGrid = currentGrid.update(move));// intentional assn.
-}
-
 export function loadMoveHistoryFromJSON(filepath) {
   return require(filepath).map(entry => ({
       move: Move.fromJSON(entry.move),

@@ -1,5 +1,5 @@
 import { testables, TaggedChain, BasicAI, playerEvents } from './players';
-import { Move , loadTaggedChainsFromJSON, loadSquareGridFromJSON, loadMoveHistoryFromJSON, SquareGrid } from './utility';
+import { Move , loadTaggedChainsFromJSON, loadMoveHistoryFromJSON, SquareGrid } from './utility';
 
 describe('TaggedChain', () => {
   const cyclicalTaggedChainA = Object.assign(new TaggedChain, {
@@ -93,7 +93,7 @@ describe('TaggedChain', () => {
 
 describe('BasicAI', () => {
   const testSuite = ([
-    ['MoveHistory1.json', [3,3]],
+    ['MoveHistory2.json', [3,3]],
   ]);
  
   const loadedMoveHistories = testSuite.map(([filename, dimensions]) => (
@@ -254,7 +254,15 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
 
 describe('groupMovesIntoTaggedChains', () => {
   const testTaggedChains = loadTaggedChainsFromJSON('./test_fixtures/TaggedChains1.json');
-  const testSquareGrids = loadSquareGridFromJSON('./test_fixtures/GameState1.json');
+  const testMoveHistoryJSON = require("./test_fixtures/newMoveHistory.json");
+  let gameState = new SquareGrid(5, 5);
+ 
+  const testSquareGrids = testMoveHistoryJSON.map((item) => {
+    const move = Move.fromJSON(item.move);
+    gameState = gameState.update(move);
+    return gameState;
+  });
+
   const valuesTable = testTaggedChains.map((chain, index) => [testSquareGrids[index], chain]);
   test.each(valuesTable)('SquareGrid derived from Move %# of GameState1 returns correct TaggedChain', (boardState, taggedChains) => {
     expect(testables.groupMovesIntoTaggedChains(
