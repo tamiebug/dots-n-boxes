@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { GameStateContext, ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
 import { GameMenu, GameMenuItem } from './GameMenu.js';
 import { playerEvents } from "./players.js";
-import { Move , printObjectToJSON } from "./utility.js";
+import { Move , printObjectToJSON, MoveHistory } from "./utility.js";
 
 const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
@@ -12,7 +12,7 @@ export function ControlPanel(props) {
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
 
-  const { players, currentPlayer, gameActive, gameBoardState, gameSettings, moveHistory} = gameState;
+  const { players, currentPlayer, gameActive, gameBoardState, gameSettings, moveHistory } = gameState;
   const [ player1, player2 ] = players;
   
   function onUndoClick() {
@@ -38,13 +38,8 @@ export function ControlPanel(props) {
       reader.onload = readerEvent => {
         const currentGameStateJSON = readerEvent.target.result;
         const { settings: newSettings, moveHistory: newMoveHistoryJSON } = JSON.parse(currentGameStateJSON);
-        const newMoveHistory = newMoveHistoryJSON.map((entry) => ({
-          move: Move.fromJSON(entry.move),
-          range: entry.range == undefined ? undefined : entry.range.map((rangeMove) => Move.fromJSON(rangeMove)),
-          player: entry.player,
-        }));
         applySettings(gameStateDispatch, newSettings, props.appSettings);
-        gameStateDispatch({ type: "loadGame", moveHistory: newMoveHistory });
+        gameStateDispatch({ type: "loadGame", moveHistory: MoveHistory.fromJSON(newMoveHistoryJSON) });
       };
 
       reader.readAsText(fileList[0]);
@@ -53,8 +48,7 @@ export function ControlPanel(props) {
   }
 
   function saveGameStateToJSON() {
-    printObjectToJSON({ settings: gameSettings, moveHistory: moveHistory.map(entry => ({
-       player: entry.player, move: entry.move, range: props.appSettings.showMoveRanges ? entry.range : undefined })) });
+    printObjectToJSON({ settings: gameSettings, moveHistory });
   }
 
 	useEffect(() => {

@@ -1,4 +1,4 @@
-import { TaggedChain } from "./players.js";
+import { playerEvents, TaggedChain } from "./players.js";
 
 export class SquareGrid {
   /* SquareGrid is a representation of the current Dots and Boxes
@@ -366,6 +366,41 @@ export class TaggedGrid {
         }
       }
     });
+  }
+}
+
+export class MoveHistory {
+  constructor(entries = []) {
+    this.entries = entries;
+    this.length = entries.length;
+  }
+
+  update(move, player, range) {
+    const newThing = [...this.entries, { move, player, range } ];
+    return new MoveHistory(newThing);
+    //return new MoveHistory([...this.entries, { move, player, range }]);
+  }
+
+  popUpdate() {
+    // Pops the top element off of moveHistory, returning the new MoveHistory object as well.
+    const { move, player, range } = this.entries[this.length - 1];
+    return { move, player, range, newMoveHistory: new MoveHistory([...this.entries.slice(0, -1)]) };
+  }
+  
+  getRawHistory() {
+    return [... this.entries];
+  }
+
+  toJSON() {
+    return this.entries;
+  }
+
+  static fromJSON(json) {
+    return new MoveHistory(json.map(entry => ({
+      move: Move.fromJSON(entry.move),
+      range: (entry.range == undefined) ? undefined : entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
+      player: entry.player
+    })));
   }
 }
 

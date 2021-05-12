@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { Move, SquareGrid , TaggedGrid } from "./utility.js";
+import { Move, MoveHistory, SquareGrid , TaggedGrid } from "./utility.js";
 import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
 
 // Useful constants extracted here for easy changing
@@ -17,7 +17,7 @@ export const initialGameState = {
 	'playerActionCallbacks': [],// [ function ]
 	'currentPlayer': null,			// int
 	'numberMovesCompleted': -1,	// int
-	'moveHistory': [],					// [ { move: Move, player: int } ]
+	'moveHistory': null,				// MoveHistory
 	'gameBoardState': null,			// SquareGrid
 	'taggedGrid': null,					// TaggedGrid
 	'gameActive': false,				// boolean
@@ -108,16 +108,11 @@ export const gameStateReducer = function(state, action) {
 
 		case 'addMoveToHistory':
 			validateAction(action, [{ key: 'player', typeOf: 'number'}, { key: 'move', 'instanceOf': Move }]);
-			if (action.range) {
-				return {...state, moveHistory: [...moveHistory, { move: action.move, range: action.range, player: action.player }]};
-			} else {
-				return {...state, moveHistory: [...moveHistory, { move: action.move, player: action.player }]};
-			}
+			return {...state, moveHistory: moveHistory.update(action.move, action.player, action.range)};
 
 		case 'attemptMoveTakeback':
 			if (moveHistory.length < 1) throw new Error(`attemptMoveTakeback run with insufficient moves in history: ${moveHistory.length}`);
-			let newMoveHistory = [...moveHistory];
-			let {move: lastMove, player: lastPlayer} = newMoveHistory.pop();
+			let { move: lastMove, player: lastPlayer, newMoveHistory } = moveHistory.popUpdate();
 			let revertedGameBoardState = gameBoardState.copy();
 
 			if (players[lastPlayer] instanceof LocalHumanPlayer) {
@@ -145,9 +140,7 @@ export const gameStateReducer = function(state, action) {
 					reducerActions.push({ type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByLastMove, initials: ""});
 					reducerActions.push({ type: 'addScore', player: lastPlayer, points: boxesCompletedByLastMove.length * -1});
 
-					let moveHistoryObject = newMoveHistory.pop();
-					lastMove = moveHistoryObject.move;
-					lastPlayer = moveHistoryObject.player;
+					({ move: lastMove, player: lastPlayer, newMoveHistory: newMoveHistory } = newMoveHistory.popUpdate());
 				}
 
 				// Undo your move (since the AI went after you, you didn't complete boxes that turn, we can skip that step)
@@ -171,13 +164,14 @@ export const gameStateReducer = function(state, action) {
 			return setUpGame(action.settings, state);
 
 		case 'loadGame':
-			validateAction(action, [{ key: 'moveHistory', typeOf: 'object'}]);
+			validateAction(action, [{ key: 'moveHistory', "instanceOf": MoveHistory }]);
 			
 			// We want to deactivate the game before applying moves to avoid AI agents attempting to make moves, reactivate before last applied move.
-			const moveReducerActions = [
-				{ type: 'deactivateGame' }
-			];
-			for (let moveAction of action.moveHistory.slice(0, -1)) {
+			const moveReducerActions = [ { type: 'deactivateGame' } ];
+			let lastRange;
+			({ move: lastMove, player: lastPlayer, range: lastRange, newMoveHistory } = action.moveHistory.popUpdate());
+
+			for (let moveAction of newMoveHistory.getRawHistory()) {
 				moveReducerActions.push({
 					type: "attemptMove",
 					player: moveAction.player,
@@ -185,12 +179,13 @@ export const gameStateReducer = function(state, action) {
 					range: moveAction.range,
 				});
 			}
+
 			moveReducerActions.push({ type: 'activateGame' });
 			moveReducerActions.push({
 				type: "attemptMove",
-				player: action.moveHistory[action.moveHistory.length - 1].player,
-				move: action.moveHistory[action.moveHistory.length -1].move,
-				range: action.moveHistory[action.moveHistory.length - 1].range
+				player: lastPlayer,
+				move: lastMove,
+				range: lastRange,
 			});
 
 			return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: moveReducerActions });
@@ -200,7 +195,7 @@ export const gameStateReducer = function(state, action) {
 
 		case 'deactivateGame':
 			return {...state, 'gameActive': false};
-		
+
 		case 'showChains':
 			validateAction(action, [{ key: 'chains', 'instanceOf': Array}]);
 			const boxTags = renderBoxChainsIntoTags(action.chains);
@@ -249,7 +244,7 @@ function setUpGame(settings, state) {
 		'playerActionCallbacks': [() => {}, () => {}],
 		'currentPlayer': 0,
 		'numberMovesCompleted': state.numberMovesCompleted + 1,
-		'moveHistory': [],
+		'moveHistory': new MoveHistory(),
 		'matchNumber': state.matchNumber + 1,
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
 		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
