@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { GameStateContext, ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
 import { GameMenu, GameMenuItem } from './GameMenu.js';
 import { playerEvents } from "./players.js";
-import { Move } from "./utility.js";
+import { Move , printObjectToJSON } from "./utility.js";
 
 const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
@@ -12,7 +12,7 @@ export function ControlPanel(props) {
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
 
-  const { players, currentPlayer, gameActive, gameBoardState } = gameState;
+  const { players, currentPlayer, gameActive, gameBoardState, gameSettings, moveHistory} = gameState;
   const [ player1, player2 ] = players;
   
   function onUndoClick() {
@@ -26,12 +26,35 @@ export function ControlPanel(props) {
   };
 
   function printMovesJSON() {
-    const jsonText = JSON.stringify(gameState.moveHistory, null, 2);
-    const jsonWindow = window.open();
-    jsonWindow.document.open();
-    jsonWindow.document.write('<html><body><pre>' + jsonText + '</pre></body></html>');
-    jsonWindow.document.close();
-    jsonWindow.focus();
+    printObjectToJSON(gameState.moveHistory);
+  }
+
+  function loadGameStateFromJSON() {
+    const inputElement = document.getElementById("loadGameStateFromJSONHiddenInput");
+    inputElement.onchange = (event) => {
+      const fileList = event.target.files;
+      const reader = new FileReader();
+
+      reader.onload = readerEvent => {
+        const currentGameStateJSON = readerEvent.target.result;
+        const { settings: newSettings, moveHistory: newMoveHistoryJSON } = JSON.parse(currentGameStateJSON);
+        const newMoveHistory = newMoveHistoryJSON.map((entry) => ({
+          move: Move.fromJSON(entry.move),
+          range: entry.range == undefined ? undefined : entry.range.map((rangeMove) => Move.fromJSON(rangeMove)),
+          player: entry.player,
+        }));
+        applySettings(gameStateDispatch, newSettings, props.appSettings);
+        gameStateDispatch({ type: "loadGame", moveHistory: newMoveHistory });
+      };
+
+      reader.readAsText(fileList[0]);
+    };
+    inputElement.click();
+  }
+
+  function saveGameStateToJSON() {
+    printObjectToJSON({ settings: gameSettings, moveHistory: moveHistory.map(entry => ({
+       player: entry.player, move: entry.move, range: props.appSettings.showMoveRanges ? entry.range : undefined })) });
   }
 
 	useEffect(() => {
@@ -116,14 +139,34 @@ export function ControlPanel(props) {
               Settings
             </PanelButton>
           </div>
-          {props.appSettings.debugMode && <div className="row"> 
-            <PanelButton
-              onMouseClick={() => printMovesJSON()}
-              bootstrapType="warning"
-            >
-              Show Move History JSON
-            </PanelButton>
-          </div>}
+          {props.appSettings.debugMode && <>
+            <div className="row"> 
+              <PanelButton
+                onMouseClick={() => printMovesJSON()}
+                bootstrapType="warning"
+              >
+                Show Move History JSON
+              </PanelButton>
+            </div>
+            <div className="row">
+              <PanelButton
+                onMouseClick={() => loadGameStateFromJSON()}
+                bootstrapType="warning"
+              >
+                Load Game State from JSON
+              </PanelButton>
+              <input type="file" id="loadGameStateFromJSONHiddenInput" style={{display: "none"}} accept=".json"/>
+            </div>
+            <div className="row">
+              <PanelButton
+                onMouseClick={() => saveGameStateToJSON()}
+                bootstrapType="warning"
+              >
+                Save Game State to JSON
+              </PanelButton>
+            </div>
+          </> 
+          }
         </div>
       </div>
       <div className="row flex-grow-1 justify-content-center">

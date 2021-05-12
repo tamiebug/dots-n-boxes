@@ -236,7 +236,7 @@ export class SquareGrid {
     };
   }
 
-  fromJSON(json) {
+  static fromJSON(json) {
     const retGrid = new SquareGrid(json.nRows, json.nColumns);
     retGrid.squares = json.squares;
     return retGrid;
@@ -402,6 +402,15 @@ export function loadMoveHistoryFromJSON(filepath) {
       player: entry.player
     })
   );
+}
+export function printObjectToJSON(object, replacer = null) {
+    const jsonText = JSON.stringify(object, replacer, 2);
+    const jsonWindow = window.open();
+    jsonWindow.document.open();
+    jsonWindow.document.write('<html><body><pre>' + jsonText + '</pre></body></html>');
+    jsonWindow.document.close();
+    jsonWindow.focus();
+    return;
 }
 
 export function argmax(array) {

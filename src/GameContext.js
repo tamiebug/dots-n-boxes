@@ -21,6 +21,7 @@ export const initialGameState = {
 	'gameBoardState': null,			// SquareGrid
 	'taggedGrid': null,					// TaggedGrid
 	'gameActive': false,				// boolean
+	'gameSettings': {}					// object
 };
 
 export const gameStateReducer = function(state, action) {
@@ -74,16 +75,19 @@ export const gameStateReducer = function(state, action) {
 
 		case 'startNextTurnIfAble':
 			validateAction(action, [{ key: 'samePlayerGoes', typeOf:  'boolean' }]);
-			
 			// Are we able to start the next turn?  We know this if score is correct.
 			const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
 			const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
-			
+		
 			if (pointsScored == maxPointsPossible) {
 				// TODO: potentially change some other state variable indicating winner in future?
 				return gameStateReducer({...state}, { type: 'deactivateGame' });
-			} // else
-			return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
+			} else if (!gameActive) {
+				// don't augment numberMovesCompleted as to not trigger player startTurn(s).  Triggering startTurn(s) is it's only real purpose.
+				return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS };
+			} else {
+				return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
+			}
 
 		case 'attemptMove':
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'move', 'instanceOf': Move }]);
@@ -130,13 +134,11 @@ export const gameStateReducer = function(state, action) {
 					]}
 				);
 			} else if ([RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU)) {
-				//let previousGameBoardState = gameBoardState.copy();
 				let boxesCompletedByLastMove = 0;
 				const reducerActions = [];
 
 				// Undo all of the AI's moves that went after your move.
 				while ( [RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU) ) {
-					debugger;
 					revertedGameBoardState = revertedGameBoardState.remove(lastMove);
 					boxesCompletedByLastMove = revertedGameBoardState.boxesCompletedBy(lastMove);
 
@@ -167,6 +169,31 @@ export const gameStateReducer = function(state, action) {
 			validateAction(action, [{ key: 'settings', typeOf: 'object' }]);
 			validateSettings(action.settings);
 			return setUpGame(action.settings, state);
+
+		case 'loadGame':
+			validateAction(action, [{ key: 'moveHistory', typeOf: 'object'}]);
+			
+			// We want to deactivate the game before applying moves to avoid AI agents attempting to make moves, reactivate before last applied move.
+			const moveReducerActions = [
+				{ type: 'deactivateGame' }
+			];
+			for (let moveAction of action.moveHistory.slice(0, -1)) {
+				moveReducerActions.push({
+					type: "attemptMove",
+					player: moveAction.player,
+					move: moveAction.move,
+					range: moveAction.range,
+				});
+			}
+			moveReducerActions.push({ type: 'activateGame' });
+			moveReducerActions.push({
+				type: "attemptMove",
+				player: action.moveHistory[action.moveHistory.length - 1].player,
+				move: action.moveHistory[action.moveHistory.length -1].move,
+				range: action.moveHistory[action.moveHistory.length - 1].range
+			});
+
+			return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: moveReducerActions });
 
 		case 'activateGame':
 			return {...state, 'gameActive': true};
@@ -227,6 +254,7 @@ function setUpGame(settings, state) {
 		'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
 		'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
 		'gameActive': true,
+		'gameSettings': settings,
 	};
 }
 
