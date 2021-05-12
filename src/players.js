@@ -67,6 +67,10 @@ export class TaggedChain {
       }
     }
   }
+
+  static fromJSON(json) {
+    return new TaggedChain(json.moves.map(move => Move.fromJSON(move)), json.active, json.doublyActive);
+  }
 }
 
 class ChainBuilder {

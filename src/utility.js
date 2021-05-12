@@ -386,13 +386,7 @@ function deepFreeze(object) {
 
 export function loadTaggedChainsFromJSON(filepath) {
   const JSON = require(filepath);
-  // Add prototypes to reconstitute Moves and TaggedChains
-  return JSON.map(chainArray => 
-    chainArray.map(chain => {
-      const movesObj = { moves: chain.moves.map(moveJSON => Move.fromJSON(moveJSON)) };
-      return Object.assign(new TaggedChain, chain, movesObj);
-    })
-  );
+  return JSON.map(chainArray => chainArray.map(chain => TaggedChain.fromJSON(chain)));
 }
 
 export function loadMoveHistoryFromJSON(filepath) {
@@ -403,6 +397,7 @@ export function loadMoveHistoryFromJSON(filepath) {
     })
   );
 }
+
 export function printObjectToJSON(object, replacer = null) {
     const jsonText = JSON.stringify(object, replacer, 2);
     const jsonWindow = window.open();

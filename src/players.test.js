@@ -81,9 +81,7 @@ describe('TaggedChain', () => {
     });
 
     const toAndFromJSON = (chain) => {
-      const json = JSON.parse(JSON.stringify(chain));
-      const movesObj = { moves: chain.moves.map(moveJSON => Move.fromJSON(moveJSON)) };
-      return Object.assign(new TaggedChain, json, movesObj);
+      return TaggedChain.fromJSON(JSON.parse(JSON.stringify(chain)));
     };
     test.each([[cyclicalTaggedChainA], [acyclicalTaggedChainA], [acyclicalTaggedChainB]])('properly identifies chains of moves reconstituted from JSON to be equal to themselves', (chain) => {
       expect(chain.isEquivalentTo(toAndFromJSON(chain))).toBe(true);
@@ -271,10 +269,7 @@ describe('groupMovesIntoTaggedChains', () => {
  });
 
   const testTaggedChainsJSON2 = require('./test_fixtures/TaggedChains3.json');
-  const testTaggedChains2 = testTaggedChainsJSON2.map(chain => {
-  const movesObj = { moves: chain.moves.map(moveJSON => Move.fromJSON(moveJSON)) };
-    return Object.assign(new TaggedChain, chain, movesObj);
-  });
+  const testTaggedChains2 = testTaggedChainsJSON2.map(chainJSON => TaggedChain.fromJSON(chainJSON));
 
   const testGameState2 = SquareGrid.fromJSON(require('./test_fixtures/GameState3.json'));
 
