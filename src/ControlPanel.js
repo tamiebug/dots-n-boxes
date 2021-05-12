@@ -314,22 +314,22 @@ function GameStartPanelMenu(props) {
       const { formData, linkTo } = gameMenuContext;
       return (<>
         <GameMenuItem pageName="Home Page">
-          <a href="javascript:undefined" onClick={(event) => linkTo("Choose Opponent Type")}>
+          <a href="#" onClick={(event) => { event.preventDefault(); linkTo("Choose Opponent Type"); }}>
             <h3> Play Locally </h3>
           </a>
-          <a href="javascript:undefined" onClick={(event) => linkTo(2)}>
+          <a href="#" onClick={(event) => { event.preventDefault(); linkTo(2); }}>
             <h3> Play Over Network </h3>
           </a>
-          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'useSavedSettings', gameMenuContext)}>
+          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'useSavedSettings', gameMenuContext); }}>
             <h3> Use { props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings </h3>
           </a>
 
         </GameMenuItem>
         <GameMenuItem pageName="Choose Opponent Type">
-          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'aiPlayerGame', gameMenuContext)} >
+          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'aiPlayerGame', gameMenuContext); }}>
             <h3> Vs AI? </h3>
           </a>
-          <a href="javascript:undefined" onClick={(event) => handleFormEvent(event, 'localPlayerGame', gameMenuContext)} >
+          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'localPlayerGame', gameMenuContext); }}>
             <h3> Vs Local Player? </h3>
           </a>
         </GameMenuItem>
