@@ -254,7 +254,7 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
 
 describe('groupMovesIntoTaggedChains', () => {
   const testTaggedChains = loadTaggedChainsFromJSON('./test_fixtures/TaggedChains1.json');
-  const testMoveHistoryJSON = require("./test_fixtures/newMoveHistory.json");
+  const testMoveHistoryJSON = require("./test_fixtures/MoveHistory1.json");
   let gameState = new SquareGrid(5, 5);
  
   const testSquareGrids = testMoveHistoryJSON.map((item) => {
@@ -269,4 +269,19 @@ describe('groupMovesIntoTaggedChains', () => {
       boardState, boardState.findSquareCompletingMoves(), testables.findCompletableSquareMakers(boardState)
     )).toBeEquivalentTaggedChainListTo(taggedChains);
  });
+
+  const testTaggedChainsJSON2 = require('./test_fixtures/TaggedChains3.json');
+  const testTaggedChains2 = testTaggedChainsJSON2.map(chain => {
+  const movesObj = { moves: chain.moves.map(moveJSON => Move.fromJSON(moveJSON)) };
+    return Object.assign(new TaggedChain, chain, movesObj);
+  });
+
+  const testGameState2 = SquareGrid.fromJSON(require('./test_fixtures/GameState3.json'));
+
+  test(' when applied to GameState3.json returns the chains in TaggedChains3.json', () => {
+    expect(testables.groupMovesIntoTaggedChains(
+      testGameState2, testGameState2.findSquareCompletingMoves(), testables.findCompletableSquareMakers(testGameState2)
+    )).toBeEquivalentTaggedChainListTo(testTaggedChains2);
+  });
+  
 });

@@ -206,6 +206,21 @@
   },
   {
     "move": {
+      "r": 1,
+      "c": 0,
+      "_isHoriz": true
+    },
+    "range": [
+      {
+        "r": 1,
+        "c": 0,
+        "_isHoriz": true
+      }
+    ],
+    "player": 1
+  },
+  {
+    "move": {
       "r": 2,
       "c": 0,
       "_isHoriz": true
@@ -218,21 +233,6 @@
       }
     ],
     "player": 1
-  },
-  {
-    "move": {
-      "r": 1,
-      "c": 0,
-      "_isHoriz": true
-    },
-    "range": [
-      {
-        "r": 1,
-        "c": 0,
-        "_isHoriz": true
-      }
-    ],
-    "player": 0
   },
   {
     "move": {
@@ -245,9 +245,14 @@
         "r": 2,
         "c": 1,
         "_isHoriz": true
+      },
+      {
+        "r": 1,
+        "c": 2,
+        "_isHoriz": false
       }
     ],
-    "player": 0
+    "player": 1
   },
   {
     "move": {
@@ -259,9 +264,9 @@
       {
         "r": 1,
         "c": 2,
-        "_isHoriz": false
+        "isHoriz": false
       }
     ],
-    "player": 1
+    "player": 0
   }
 ]

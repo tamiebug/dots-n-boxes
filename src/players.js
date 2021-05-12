@@ -148,11 +148,11 @@ function groupMovesIntoTaggedChains(currentState, squareCompleters, squareComple
       for (let j = i+1; j < len; j++) {
         if (taggedMoves[j].hasBeenConsumed) continue;
 
-        if (currentState.update(currentChain.rightMostMove()).boxesCompletedBy(taggedMoves[j].move).length > 0) {
+        if ( currentState.update(currentChain.rightMostMove()).boxesCompletedBy(taggedMoves[j].move).length > currentState.boxesCompletedBy(taggedMoves[j].move).length ) {
           currentChain.append(taggedMoves[j].move, taggedMoves[j].isCompleter);
           taggedMoves[j].hasBeenConsumed = true;
           chainIsBuilding = true;
-        } else if (currentState.update(currentChain.leftMostMove()).boxesCompletedBy(taggedMoves[j].move).length > 0) {
+        } else if (currentState.update(currentChain.leftMostMove()).boxesCompletedBy(taggedMoves[j].move).length > currentState.boxesCompletedBy(taggedMoves[j].move).length ) {
           currentChain.prepend(taggedMoves[j].move, taggedMoves[j].isCompleter);
           taggedMoves[j].hasBeenConsumed = true;
           chainIsBuilding = true;
@@ -405,7 +405,7 @@ export class BasicAI extends Player {
       doublyActive2ChainMoves,
       singlyActive3pChainMoves,
       doublyActive4pChainMoves,
-      freeDoublyActive3ChainMoves,
+      //freeDoublyActive3ChainMoves,  I don't think there are free doubly active 3-chain moves...
       freeSinglyActive2ChainMoves,
       take2ChainMoves,
       takeSecondDoublyActive3ChainMoves,
@@ -438,6 +438,7 @@ export class BasicAI extends Player {
     const strategyPromise = new Promise((resolve, reject) => {
       for (const moveSuggester of this.strategy) {
         //console.log(`executing strategy: ${moveSuggester.name}`);
+
         const moves = moveSuggester(taggedChains, this._currentState);
         //console.log(`result of execution: ${moves.map(move=>move.toString())}`);
         if (!(moves instanceof Array)) {
@@ -455,7 +456,7 @@ export class BasicAI extends Player {
       }
     });
 
-    Promise.all([timeoutPromise, strategyPromise]).then(([_, moves]) => {
+    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => {
       this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS });
       this.performMove(moves);
     });
@@ -626,11 +627,11 @@ function take2ChainMoves(taggedChains, currentState) {
     const completingMove = currentState.findSquareCompletingMoves(singlyActive2_chains[0].moves)[0];
     const otherMove = completingMove.equals(singlyActive2_chains[0].moves[0]) ? singlyActive2_chains[0].moves[1] : singlyActive2_chains[0].moves[0];
     if (CV > 4) {
-      // Take it
-      return [completingMove];
-    } else {
       // Leave it
       return [otherMove];
+    } else {
+      // Take it
+      return [completingMove];
     }
   } else {
     return [];
@@ -659,10 +660,10 @@ function takeFirstActive3ChainMoves(taggedChains, currentState) {
     });
 
     if (CV > 8) {
-      // Take it
+      // Leave it
       return nonCompletingMoves;
     } else {
-      // Leave it
+      // Take it
       return completingMoves;
     }
   } else {
