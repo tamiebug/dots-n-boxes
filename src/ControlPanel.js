@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
-import { GameStateContext, ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
-import { GameMenu, GameMenuItem } from './GameMenu.js';
+import { AppSettingsMenu } from "./AppSettingsMenu.js";
+import { GameStateContext } from "./GameContext.js";
+import { GameStartPanelMenu } from "./GameStartPanelMenu.js";
 import { playerEvents } from "./players.js";
 import { Move , printObjectToJSON, MoveHistory } from "./utility.js";
 
@@ -8,29 +9,33 @@ const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["P
 
 export function ControlPanel(props) {
   const { gameState, gameStateDispatch } = useContext(GameStateContext);
-  const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
+  const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
 
-  const { players, currentPlayer, gameActive, gameBoardState, gameSettings, moveHistory } = gameState;
+  const { players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
   const [ player1, player2 ] = players;
   
-  function onUndoClick() {
-    gameStateDispatch({type: 'attemptMoveTakeback'});
-  };
+  useEffect(() => {
+    if (props.appSettings.savePreviousMatchSettings === true) {
+      const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
+      const previousGameSettings = JSON.parse(previousGameSettingsString);
+      setPreviousSettings({...DEFAULT_GAME_SETTINGS, ...previousGameSettings});
+    } else {
+      setPreviousSettings(DEFAULT_GAME_SETTINGS);
+    }
+    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS, props.appSettings);
+  }, [ ]);
 
-  function onNewGame() {
-    gameStateDispatch({type: 'endCurrentTurn'});
-    gameState.players.forEach((_, player) => gameStateDispatch({type: 'registerPlayerCallback', player: player, callback: () => {}}));
+  function onNewGame({ gameState, gameStateDispatch }) {
+    gameStateDispatch({ type: 'endCurrentTurn' });
+    gameState.players.forEach((_, player) => gameStateDispatch({ type: 'registerPlayerCallback', player: player, callback: () => {} }));
     setShowStartMenu(true);
-  };
-
-  function printMovesJSON() {
-    printObjectToJSON(gameState.moveHistory);
   }
 
   function loadGameStateFromJSON() {
     const inputElement = document.getElementById("loadGameStateFromJSONHiddenInput");
+    
     inputElement.onchange = (event) => {
       const fileList = event.target.files;
       const reader = new FileReader();
@@ -47,73 +52,28 @@ export function ControlPanel(props) {
     inputElement.click();
   }
 
-  function saveGameStateToJSON() {
-    printObjectToJSON({ settings: gameSettings, moveHistory });
+  function setGameSettingsAndKillMenu(settings) {
+    setShowStartMenu(false);
+    setPreviousSettings({...settings});
+    if (props.appSettings.savePreviousMatchSettings === true) {
+      const stringifiedSettings = JSON.stringify(settings);
+      window.localStorage.setItem('Previous Game Settings', JSON.stringify(settings));
+    }
+    applySettings(gameStateDispatch, {...settings}, props.appSettings);
   }
 
-	useEffect(() => {
-		if (gameState.numberMovesCompleted > -1) {
-			gameState.players[gameState.currentPlayer].startTurn();
-    }
-	}, [gameState.numberMovesCompleted]);
-
-
-  useEffect(() => {
-    if (props.appSettings.savePreviousMatchSettings === true) {
-      const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
-      const previousGameSettings = JSON.parse(previousGameSettingsString);
-      setPreviousSettings({...DEFAULT_GAME_SETTINGS, ...previousGameSettings});
-    } else {
-      setPreviousSettings(DEFAULT_GAME_SETTINGS);
-    }
-    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS, props.appSettings);
-  }, [ ]);
-
-  useEffect(() => {
-    if (gameBoardState == null) return;
-    const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
-    const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
-    
-    if (pointsScored == maxPointsPossible) {
-      const gameIsTied = players[0].score == players[1].score;
-      const playerOneWon = players[0].score > players[1].score;
-      if ( gameIsTied ) {
-        window.alert(`The game was a tie!`);
-      } else if ( playerOneWon ) {
-        window.alert(`${players[0]._name} has won!`);
-      } else /* player two won */ {
-        window.alert(`${players[1]._name} has won!`);
-      }
-      if (props.appSettings.debugMode && window.confirm(`Would you like to show JSON of last match's moves?`)) printMovesJSON();
-      if (window.confirm(`Would you like to play again?`)) onNewGame();
-    }
-  }, [ gameActive ]);
-
-	if (gameState.gameBoardState == null) return null;
-
-  return (
+  return gameState.gameBoardState == null ? null : (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
       {showStartMenu == true && <GameStartPanelMenu 
         name="GameMenu"
         previousSettings={ previousSettings }
         appSettings={ props.appSettings }
-        setGameSettingsAndKillMenu={(settings) => {
-          setShowStartMenu(false);
-          setPreviousSettings({...settings});
-          if (props.appSettings.savePreviousMatchSettings === true) {
-            const stringifiedSettings = JSON.stringify(settings);
-            window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
-          }
-          applySettings(gameStateDispatch, {...settings}, props.appSettings);
-        }}
+        setGameSettingsAndKillMenu={ s => setGameSettingsAndKillMenu(s) }
       />}
       {showAppSettingsMenu == true && <AppSettingsMenu 
         name="AppSettingsMenu"
         appSettings= {props.appSettings}
-        setAppSettingsAndKillMenu= {(settings) => {
-          setShowAppSettingsMenu(false);
-          props.setAppSettings(settings);
-        }}
+        setAppSettingsAndKillMenu= { settings => { setShowAppSettingsMenu(false); props.setAppSettings(settings); }}
       />}
       <div className="row">
         <div className="col" id="playerNameDisplay">
@@ -136,7 +96,7 @@ export function ControlPanel(props) {
           {props.appSettings.debugMode && <>
             <div className="row"> 
               <PanelButton
-                onMouseClick={() => printMovesJSON()}
+                onMouseClick={ () => printObjectToJSON(gameState.moveHistory) }
                 bootstrapType="warning"
               >
                 Show Move History JSON
@@ -144,7 +104,7 @@ export function ControlPanel(props) {
             </div>
             <div className="row">
               <PanelButton
-                onMouseClick={() => loadGameStateFromJSON()}
+                onMouseClick={ () => loadGameStateFromJSON() }
                 bootstrapType="warning"
               >
                 Load Game State from JSON
@@ -153,7 +113,7 @@ export function ControlPanel(props) {
             </div>
             <div className="row">
               <PanelButton
-                onMouseClick={() => saveGameStateToJSON()}
+                onMouseClick={ () => printObjectToJSON({ settings: gameSettings, moveHistory }) }
                 bootstrapType="warning"
               >
                 Save Game State to JSON
@@ -168,7 +128,7 @@ export function ControlPanel(props) {
           <div className="row">
             <div className="col-sm-auto">
               <PanelButton
-                onMouseClick={() => onUndoClick()}
+                onMouseClick={ () => gameStateDispatch({type: 'attemptMoveTakeback'}) }
                 bootstrapType="primary"
               >Undo Move</PanelButton>
             </div>
@@ -176,7 +136,7 @@ export function ControlPanel(props) {
           <div className="row">
             <div className="col-sm-auto">
               <PanelButton
-                onMouseClick={() => onNewGame()}
+                onMouseClick={ () => onNewGame({ gameState, gameStateDispatch }) }
                 bootstrapType="danger"
               >New Game</PanelButton>
             </div>
@@ -189,215 +149,10 @@ export function ControlPanel(props) {
 
 function PanelButton(props) {
   return (
-    <button type="button" className={`btn btn-${props.bootstrapType}`} onClick={() => props.onMouseClick()}>
+    <button type="button" className={`btn btn-${props.bootstrapType}`} onClick={ () => props.onMouseClick() }>
       { props.children }
     </button>
   );
-}
-
-function AppSettingsMenu(props) {
-  useEffect(() => {
-    if (!props.appSettings.debugMode) document.querySelector("#AppSettingsForm input[name='Show Move Ranges']").disabled = true;
-  }, [ ]);
-
-  function handleFormEvent(event, type, gameMenuContext) {
-    const { formData, setFormData } = gameMenuContext;
-    switch (type) {
-      case 'debugModeChanged':
-        document.querySelector("#AppSettingsForm input[name='Show Move Ranges']").disabled = !!formData.debugMode;
-        setFormData({...formData, debugMode: !formData.debugMode});
-        break;
-      case 'showMoveRangesChanged':
-        setFormData({...formData, showMoveRanges: !formData.showMoveRanges});
-        break;
-      case 'savePreviousMatchSettingsChanged':
-        setFormData({...formData, savePreviousMatchSettings: !formData.savePreviousMatchSettings});
-        break;
-      case 'saveAppSettings':
-        event.preventDefault();
-        props.setAppSettingsAndKillMenu(formData);
-        break;
-      default:
-        throw new Error(`Invalid form event type: ${type}`);
-    }
-  }
-
-  return (
-    <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={ props.appSettings } items ={gameMenuContext => {
-      const { formData } = gameMenuContext;
-      return (<>
-        <GameMenuItem pageName="Application Settings">
-          <form id="AppSettingsForm" onSubmit={(event) => handleFormEvent(event, 'saveAppSettings', gameMenuContext)}>
-            <fieldset>
-              <legend> Debugging Settings </legend>
-              <label> Debug Mode
-                <input type="checkbox" value="debugMode" name="Debug Mode" checked={ formData.debugMode } 
-                  onClick={ event => handleFormEvent(event, 'debugModeChanged', gameMenuContext )}/>
-              </label>
-              <label> Show Move Ranges
-                <input type="checkbox" value="showMoveRanges" name="Show Move Ranges" checked={ formData.showMoveRanges }
-                  onClick={ event => handleFormEvent(event, 'showMoveRangesChanged', gameMenuContext )}/>
-              </label>
-            </fieldset>
-            <fieldset>
-              <legend> Miscellaneous Settings </legend>
-              <label> Save Previous Match Settings 
-                <input type="checkbox" value="savePreviousMatchSettings" name="Save Previous Match Settings" 
-                  checked= { formData.savePreviousMatchSettings } 
-                  onClick={ event => handleFormEvent(event, 'savePreviousMatchSettingsChanged', gameMenuContext)} />
-              </label>
-            </fieldset>
-            <input type="Submit" value="Save Settings"/>
-          </form>
-        </GameMenuItem>
-      </>);
-    }}/>
-  );
-}
-
-function GameStartPanelMenu(props) {
-  useEffect(() => {
-    const boardSizeSelectElement = document.getElementById('boardSizeSelect');
-    boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE, props.previousSettings.boardHeight);
-    const aiDifficultySelectElement = document.getElementById('aiDifficultySelect');
-    aiDifficultySelectElement && populateAiDifficultyList(aiDifficultySelectElement, ALLOWED_DIFFICULTIES, props.previousSettings.cpuDifficulty);
-  }, [ ]);
-
-  function handleFormEvent( event, type , gameMenuContext ) {
-    if (gameMenuContext === undefined) throw new Error("handleFormEvent not given gameMenuContext");
-    const { formData, setFormData, linkTo } = gameMenuContext;
-    switch (type) {
-      case 'playerName1Change':
-        setFormData({...formData, playerNames: formData.playerNames.map((name, i) => i==0? event.target.value : name) });
-        break;
-      case 'playerName2Change':
-        setFormData({...formData, playerNames: formData.playerNames.map((name, i) => i==1? event.target.value : name) });
-        break;
-      case 'boardSizeChange':
-        setFormData({...formData, boardSize: event.target.value });
-        break;
-      case 'playerNamesSubmit':
-        linkTo("Board Size");
-        event.preventDefault();
-        break;
-      case 'localPlayerGame':
-        setFormData({...formData, gameType: "local"});
-        linkTo("Choose Player Name");
-        break;
-      case 'aiPlayerGame':
-        setFormData({...formData, gameType: "CPU"});
-        linkTo("AI Difficulty");
-        break;
-      case 'useSavedSettings':
-      case 'boardSizeSubmit':
-        event.preventDefault();
-        props.setGameSettingsAndKillMenu({
-          boardHeight: parseInt(formData.boardSize || formData.boardHeight),
-          boardWidth: parseInt(formData.boardSize || formData.boardWidth),
-          playerNames: [...formData.playerNames],
-          gameType: formData.gameType,
-          cpuDifficulty: formData.cpuDifficulty,
-        });
-        break;
-      case 'aiDifficultyChange':
-        setFormData({...formData, cpuDifficulty: event.target.value });
-        break;
-      case 'aiDifficultySubmit':
-        linkTo("Choose Player Name");
-        event.preventDefault();
-        break;
-    }
-  }
-
-  return (
-    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ props.previousSettings } items={(gameMenuContext) => { 
-      const { formData, linkTo } = gameMenuContext;
-      return (<>
-        <GameMenuItem pageName="Home Page">
-          <a href="#" onClick={(event) => { event.preventDefault(); linkTo("Choose Opponent Type"); }}>
-            <h3> Play Locally </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); linkTo(2); }}>
-            <h3> Play Over Network </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'useSavedSettings', gameMenuContext); }}>
-            <h3> Use { props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings </h3>
-          </a>
-
-        </GameMenuItem>
-        <GameMenuItem pageName="Choose Opponent Type">
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'aiPlayerGame', gameMenuContext); }}>
-            <h3> Vs AI? </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'localPlayerGame', gameMenuContext); }}>
-            <h3> Vs Local Player? </h3>
-          </a>
-        </GameMenuItem>
-        <GameMenuItem pageName="TBD2" />
-        <GameMenuItem pageName="TBD3" />
-        <GameMenuItem pageName="Board Size">
-          <form onSubmit={(event) => handleFormEvent(event, 'boardSizeSubmit', gameMenuContext)}>
-            <fieldset>
-              <legend>Board Size</legend>
-              <label>
-                Choose Board Size:
-                <select name="boardSize" id="boardSizeSelect" onChange={(event) => handleFormEvent(event, 'boardSizeChange', gameMenuContext)}/>
-              </label>
-              <input type="submit" value="Go" />
-            </fieldset>
-          </form>
-        </GameMenuItem>
-        <GameMenuItem pageName='TBD5' />
-        <GameMenuItem pageName="Choose Player Name">
-          <form onSubmit={(event) => handleFormEvent(event, 'playerNamesSubmit', gameMenuContext)}>
-            <fieldset>
-              <legend>Player Names</legend>
-              <label>
-                First Player: 
-                <input type="text" name="firstPlayer" value={gameMenuContext.formData.playerNames[0]} onChange={(event) => handleFormEvent(event, 'playerName1Change', gameMenuContext)} />
-              </label>
-              <label>
-                Second Player: 
-                <input type="text" name="secondPlayer" value={gameMenuContext.formData.playerNames[1]} onChange={(event) => handleFormEvent(event, 'playerName2Change', gameMenuContext)} />
-              </label>
-              <input type="submit" value="Enter"/>
-            </fieldset>
-          </form>
-        </GameMenuItem>
-        <GameMenuItem pageName="AI Difficulty">
-          <form onSubmit={(event) => handleFormEvent(event, 'aiDifficultySubmit', gameMenuContext)}>
-            <fieldset>
-              <legend>AI Difficulty:</legend>
-              <label>
-                Choose AI level:
-                <select name="aiDifficulty" id="aiDifficultySelect" onChange={(event) => handleFormEvent(event, 'aiDifficultyChange', gameMenuContext)}/>
-              </label>
-              <input type="submit" value="Select" />
-            </fieldset>
-          </form>
-        </GameMenuItem>
-      </>);
-    }}/>
-  );
-}
-
-function populateBoardSizeSelect(selectElement, min, max, defaultValue) {
-  for (let i=min; i<max; i++) {
-    const optionElement = document.createElement("option");
-    optionElement.textContent = `${i} x ${i}`;
-    optionElement.value = i;
-    if (i==defaultValue) optionElement.selected = 'selected';
-    selectElement.appendChild(optionElement); 
-  }
-}
-
-function populateAiDifficultyList(selectElement, allowedTypes, defaultValue) {
-  for (const type of allowedTypes) {
-    const optionElement = document.createElement("option");
-    optionElement.textContent = type;
-    if (type==defaultValue) optionElement.selected = true;
-    selectElement.appendChild(optionElement);
-  }
 }
 
 function applySettings(gameStateDispatch, settings, appSettings) {

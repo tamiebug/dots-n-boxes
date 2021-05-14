@@ -1,4 +1,12 @@
-import { playerEvents, TaggedChain } from "./players.js";
+import { TaggedChain } from "./players.js";
+
+export const mouseTracker = {
+	// We need to know of the current mouse state for some functionalities
+	mouseButtonDown : false,
+	onUp() { this.mouseButtonDown = false; },
+	onDown() { this.mouseButtonDown = true; },
+	isMouseButtonDown() { return this.mouseButtonDown; }
+};
 
 export class SquareGrid {
   /* SquareGrid is a representation of the current Dots and Boxes

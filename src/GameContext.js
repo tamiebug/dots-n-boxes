@@ -5,7 +5,7 @@ import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./playe
 // Useful constants extracted here for easy changing
 export const NUMBER_PLAYERS = 2;
 export const MAX_BOARD_SIZE = 30;
-export const MIN_BOARD_SIZE = 2;
+export const MIN_BOARD_SIZE = 3;
 export const ALLOWED_GAME_TYPES = ['CPU', 'local'];
 export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 

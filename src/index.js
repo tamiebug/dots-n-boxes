@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App.js";
-import { mouseTracker } from "./GameComponent.js";
+import { mouseTracker } from "./utility.js";
 
 ReactDOM.render(<App />, document.getElementById("root"));
 
