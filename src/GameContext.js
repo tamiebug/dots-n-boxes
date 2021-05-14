@@ -1,5 +1,5 @@
-import { createContext } from "react";
-import { Move, MoveHistory, SquareGrid , TaggedGrid } from "./utility.js";
+import { createContext, useReducer, useEffect } from "react";
+import { Move, MoveHistory, SquareGrid , TaggedGrid, printObjectToJSON } from "./utility.js";
 import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
 
 // Useful constants extracted here for easy changing
@@ -24,7 +24,38 @@ export const initialGameState = {
 	'gameSettings': {}					// object
 };
 
-export const gameStateReducer = function(state, action) {
+export function useGameStateStore(appSettings) {
+	const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
+	const { players, gameBoardState } = gameState;
+
+	useEffect(() => {
+		if (gameState.numberMovesCompleted > -1) {
+			gameState.players[gameState.currentPlayer].startTurn();
+    }
+	}, [gameState.numberMovesCompleted]);
+
+  useEffect(() => {
+    if (gameBoardState == null) return;
+    const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
+    const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
+    
+    if (pointsScored == maxPointsPossible) {
+      const gameIsTied = players[0].score == players[1].score;
+      const playerOneWon = players[0].score > players[1].score;
+      if ( gameIsTied ) {
+        window.alert(`The game was a tie!`);
+      } else if ( playerOneWon ) {
+        window.alert(`${players[0]._name} has won!`);
+      } else /* player two won */ {
+        window.alert(`${players[1]._name} has won!`);
+      }
+      if (appSettings.debugMode && window.confirm(`Would you like to show JSON of last match's moves?`)) printObjectToJSON(gameState.moveHistory);
+    }
+  }, [ gameState.gameActive ]);
+	return { gameState, gameStateDispatch };
+}
+
+function gameStateReducer(state, action) {
 	const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, moveHistory, gameActive } = state;
 	// console.log(`action: ${Object.entries(action)}`);
 	switch(action.type) {
