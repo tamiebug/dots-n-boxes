@@ -1,101 +1,100 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Carousel from 'react-bootstrap/Carousel';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
+import { SwitchTransition, CSSTransition } from 'react-transition-group';
+
 
 export function GameMenu(props) {
   const [ formData, setFormData ] = useState({...props.defaultFormSettings});
-  
-  // We need to instantiate props.items with something to extract pageNames
-  const pageNames = extractPageNames(props.items, { formData });
-  const [ currentMenuPage, setCurrentMenuPage ] = useState(convertPageToIntegerAndValidate(props.startingItemName, pageNames));
+
+  const [ currentMenuPage, setCurrentMenuPage ] = useState();
   const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
+  const [ pageNames, setPageNames ] = useState([]);
+  const [ pages, setPages ] = useState([]);
 
-  const context = { 
-    linkTo: (destination, undo) => {
-      if (undo) {
-        const [lastPage, ...restOfPages] = previousMenuPages;
-        setPreviousMenuPages(restOfPages);
-        setCurrentMenuPage(lastPage);
-      } else {
-        setPreviousMenuPages([currentMenuPage, ...previousMenuPages]); 
-        setCurrentMenuPage(convertPageToIntegerAndValidate(destination, pageNames))
-;
-      }
-    },
-    menuName: props.name,
-    formData,
-    setFormData: (data) => setFormData(data),
-    currentPage: currentMenuPage,
-  };
+  const pageNamesRef =  useRef({});
+  pageNamesRef.current = pageNames;
 
-  function carouselContents() {
-    const kids = props.items(context).props.children;
-    const itemsMapping = gameMenuItem => GameMenuItem({
-      children: gameMenuItem.props.children, 
-      pageName: gameMenuItem.props.pageName,
-      linkTo: context.linkTo,
-      showUndoButton: pageNames.length > 1,
-    });
-    if (React.Children.count(kids) == 1) return itemsMapping(kids);
-    else return kids.map(itemsMapping);
+  useEffect(() => {
+    const context = { 
+      linkTo: (destination, undo) => {
+        if (undo) {
+          const [lastPage, ...restOfPages] = previousMenuPages;
+          setPreviousMenuPages(restOfPages);
+          setCurrentMenuPage(lastPage);
+        } else {
+          setPreviousMenuPages([currentMenuPage, ...previousMenuPages]);
+          setCurrentMenuPage(convertPageToIntegerAndValidate(destination, { pageNames: pageNamesRef.current }))
+  ;
+        }
+      },
+      menuName: props.name,
+      formData,
+      setFormData: (data) => setFormData(data),
+      currentPage: currentMenuPage,
+    };
+
+    const { names, renderedItems } = extractPageNamesAndRender(props.items, context);
+    setPageNames([...names]);
+    setPages([...renderedItems]);
+    setCurrentMenuPage(convertPageToIntegerAndValidate(props.startingItemName, { pageNames: names }));
+  }, []);
+
+  function convertPageToIntegerAndValidate(page, { pageNames }) {
+    if (typeof page == 'number' && Number.isInteger(page) && page >= 0 && page < pageNames.length) { return page; }
+  
+    const pageIntegerFromNameLookup = pageNames.indexOf(page);
+    if (pageIntegerFromNameLookup >= 0 && pageIntegerFromNameLookup < pageNames.length) { return pageIntegerFromNameLookup; }
+  
+    const pageIntegerFromNumericString = Number(page);
+    if (!Number.isNaN(pageIntegerFromNumericString) && pageIntegerFromNumericString >= 0 && pageIntegerFromNumericString < pageNames.length) { return pageIntegerFromNumericString; }
+
+    throw new Error(`convertActivePageToIntegerAndValidate got an invalid page: ${page}`);
   }
 
-  // react-bootstrap Carousel does not function with non-Carousel.Item children, hence this workaround until a better one is found.
-  return (
-    <Modal show={ true }>
-      <Carousel activeIndex={ currentMenuPage } controls={ false } indicators={ false } interval={ null } keyboard={ false }>
-        { carouselContents() }
-      </Carousel>
-    </Modal>
+  return (pages.length < 1 || currentMenuPage == undefined) ? null : (
+    <div className="gameMenuModal">
+      <SwitchTransition mode={"out-in"}>
+        <CSSTransition
+          key={ currentMenuPage }
+          classNames='fade'
+          addEndListener={(node, done) => node.addEventListener("transitionend", done, false)}
+        >
+          { pages[currentMenuPage] }
+        </CSSTransition>
+      </SwitchTransition>
+    </div>
   );
 }
 
 export function GameMenuItem(props) {
   return (
-    <Carousel.Item>
-      <Modal.Header>
-        <Modal.Title> { props.pageName } </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
+    <div className="gameMenuModalContent">
+      <div className="gameMenuModalHeader">
+        <h2> { props.pageName } </h2>
+      </div>
+      <div className="gameMenuModalBody">
         { props.children }
-      </Modal.Body>
-      {props.showUndoButton && (
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => props.linkTo(undefined, true)}> Previous </Button>
-        </Modal.Footer>
-      )}
-    </Carousel.Item>
+      </div>
+      <div className="gameMenuModalFooter">
+        <Button variant="secondary" onClick={() => props.linkTo(undefined, true)}> Previous </Button>
+      </div>
+    </div>
   );
 }
 
-function convertPageToIntegerAndValidate(page, pageNames) {
-  if (typeof page == 'number' && Number.isInteger(page) && page >= 0 && page < pageNames.length) {
-    return page;
-  }
 
-  const pageIntegerFromNameLookup = pageNames.indexOf(page);
-  if (pageIntegerFromNameLookup >= 0 && pageIntegerFromNameLookup < pageNames.length) {
-    return pageIntegerFromNameLookup;
-  }
 
-  const pageIntegerFromNumericString = Number(page);
-  if (!Number.isNaN(pageIntegerFromNumericString) && pageIntegerFromNumericString >= 0 && pageIntegerFromNumericString < pageNames.length) {
-    return pageIntegerFromNumericString;
-  }
-
-  throw new Error(`convertActivePageToIntegerAndValidate got an invalid page: ${page}`);
-}
-
-function extractPageNames(itemsRenderProp, gameMenuContext) {
+function extractPageNamesAndRender(itemsRenderProp, gameMenuContext) {
   const contextualizedItems = itemsRenderProp(gameMenuContext);
   if ( contextualizedItems.type === React.Fragment ) {
     const numberKids = React.Children.count(contextualizedItems.props.children);
     if ( numberKids > 1) {
-      return contextualizedItems.props.children.map(child => child.props.pageName);
+      return { names: contextualizedItems.props.children.map(child => child.props.pageName), renderedItems: contextualizedItems.props.children };
     } else if ( numberKids == 1) {
       // For some reason, fragments with a single child returns not a singleton array, but just the element itself
-      return [contextualizedItems.props.children.props.pageName];
+      return { names: [contextualizedItems.props.children.props.pageName], renderedItems: [contextualizedItems.props.children] };
     } else {
       // Uuhh... what's goin on here
       throw new Error(`extractPageNames received no items -- did you include at least one GameMenuItem in GameMenu?`);

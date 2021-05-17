@@ -62,7 +62,13 @@ export function GameStartPanelMenu(props) {
       const { formData, linkTo } = gameMenuContext;
       return (<>
         <GameMenuItem pageName="Home Page">
-          <a href="#" onClick={(event) => { event.preventDefault(); linkTo("Choose Opponent Type"); }}>
+          <button className="gameMenuButton" onClick={(event) => linkTo("Choose Opponent Type")}>
+            Play Locally
+          </button>
+          <button className="gameMenuButton" onClick={(event) => linkTo(2)}>
+            Play Over Network
+          </button>
+          {/*<a href="#" onClick={(event) => { event.preventDefault(); linkTo("Choose Opponent Type"); }}>
             <h3> Play Locally </h3>
           </a>
           <a href="#" onClick={(event) => { event.preventDefault(); linkTo(2); }}>
@@ -70,7 +76,7 @@ export function GameStartPanelMenu(props) {
           </a>
           <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'useSavedSettings', gameMenuContext); }}>
             <h3> Use {props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings </h3>
-          </a>
+      </a>*/}
 
         </GameMenuItem>
         <GameMenuItem pageName="Choose Opponent Type">
