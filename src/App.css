@@ -264,11 +264,6 @@ body {
   background: #303030;
 }
 
-.selectableMenu tr.selected {
-  background: #4d4d4d;
-  border: thin solid #999999;
-}
-
 .selectableMenu tr:hover {
   background: #424242;
   border: thin solid #666666;
@@ -278,6 +273,10 @@ body {
   background: #303030;
 }
 
+.selectableMenu tr.selected {
+  background: #4d4d4d;
+  border: thin solid #999999;
+}
 .selectableMenu .tableButtons {
   display: flex;
   justify-content: space-between;
