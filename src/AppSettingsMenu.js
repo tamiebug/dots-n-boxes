@@ -32,7 +32,7 @@ export function AppSettingsMenu(props) {
   return (
     <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={props.appSettings} items={gameMenuContext => {
       const { formData } = gameMenuContext;
-      return (<>
+      return ([
         <GameMenuItem pageName="Application Settings">
           <form id="AppSettingsForm" onSubmit={(event) => handleFormEvent(event, 'saveAppSettings', gameMenuContext)}>
             <fieldset>
@@ -57,7 +57,7 @@ export function AppSettingsMenu(props) {
             <input type="Submit" value="Save Settings" />
           </form>
         </GameMenuItem>
-      </>);
+      ]);
     }} />
   );
 }

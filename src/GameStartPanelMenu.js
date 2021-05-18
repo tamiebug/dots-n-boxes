@@ -1,14 +1,20 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
 import { GameMenu, GameMenuItem } from './GameMenu.js';
 
 export function GameStartPanelMenu(props) {
-  useEffect(() => {
-    const boardSizeSelectElement = document.getElementById('boardSizeSelect');
-    boardSizeSelectElement && populateBoardSizeSelect(boardSizeSelectElement, MIN_BOARD_SIZE, MAX_BOARD_SIZE, props.previousSettings.boardHeight);
-    const aiDifficultySelectElement = document.getElementById('aiDifficultySelect');
-    aiDifficultySelectElement && populateAiDifficultyList(aiDifficultySelectElement, ALLOWED_DIFFICULTIES, props.previousSettings.cpuDifficulty);
-  }, []);
+
+  const boardSizeSelectElement = context => createSelect(
+    [...Array(MAX_BOARD_SIZE - MIN_BOARD_SIZE)].map((_, index) => `${index + MIN_BOARD_SIZE} x ${index + MIN_BOARD_SIZE}`),
+    `${props.previousSettings.boardWidth} x ${props.previousSettings.boardHeight}`,
+    { name: "boardSize", id: "boardSizeSelect", onChange: e => handleFormEvent(e, 'boardSizeChange', context)}
+  );
+
+  const aiDifficultySelectElement = context => createSelect(
+    ALLOWED_DIFFICULTIES,
+    props.previousSettings.cpuDifficulty,
+    { name: "aiDifficulty", id: "aiDifficultySelect", onChange: e => handleFormEvent(e, 'aiDifficultyChange', context)}
+  );
 
   function handleFormEvent(event, type, gameMenuContext) {
     if (gameMenuContext === undefined)
@@ -58,100 +64,83 @@ export function GameStartPanelMenu(props) {
   }
 
   return (
-    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={props.previousSettings} items={(gameMenuContext) => {
+    <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={props.previousSettings} items={ gameMenuContext => {
       const { formData, linkTo } = gameMenuContext;
-      return (<>
+      return ([
         <GameMenuItem pageName="Home Page">
-          <button className="gameMenuButton" onClick={(event) => linkTo("Choose Opponent Type")}>
+          <button className="gameMenuButton" onClick={ e => linkTo("Choose Opponent Type") }>
             Play Locally
           </button>
-          <button className="gameMenuButton" onClick={(event) => linkTo(2)}>
+          <button className="gameMenuButton" onClick={ e => linkTo(2) }>
             Play Over Network
           </button>
-          {/*<a href="#" onClick={(event) => { event.preventDefault(); linkTo("Choose Opponent Type"); }}>
-            <h3> Play Locally </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); linkTo(2); }}>
-            <h3> Play Over Network </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'useSavedSettings', gameMenuContext); }}>
-            <h3> Use {props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings </h3>
-      </a>*/}
-
-        </GameMenuItem>
+          <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'useSavedSettings', gameMenuContext); } }>
+             Use {props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings
+          </button>
+        </GameMenuItem>,
         <GameMenuItem pageName="Choose Opponent Type">
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'aiPlayerGame', gameMenuContext); }}>
-            <h3> Vs AI? </h3>
-          </a>
-          <a href="#" onClick={(event) => { event.preventDefault(); handleFormEvent(event, 'localPlayerGame', gameMenuContext); }}>
-            <h3> Vs Local Player? </h3>
-          </a>
-        </GameMenuItem>
-        <GameMenuItem pageName="TBD2" />
-        <GameMenuItem pageName="TBD3" />
+          <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'aiPlayerGame', gameMenuContext); }}>
+            Vs AI?
+          </button>
+          <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'localPlayerGame', gameMenuContext); }}>
+            Vs Local Player?
+          </button>
+        </GameMenuItem>,
+        <GameMenuItem pageName="TBD2" />,
+        <GameMenuItem pageName="TBD3" />,
         <GameMenuItem pageName="Board Size">
-          <form onSubmit={(event) => handleFormEvent(event, 'boardSizeSubmit', gameMenuContext)}>
+          <form onSubmit={ e => handleFormEvent(e, 'boardSizeSubmit', gameMenuContext) }>
             <fieldset>
               <legend>Board Size</legend>
               <label>
                 Choose Board Size:
-                <select name="boardSize" id="boardSizeSelect" onChange={(event) => handleFormEvent(event, 'boardSizeChange', gameMenuContext)} />
+                { boardSizeSelectElement(gameMenuContext) }
               </label>
               <input type="submit" value="Go" />
             </fieldset>
           </form>
-        </GameMenuItem>
-        <GameMenuItem pageName='TBD5' />
+        </GameMenuItem>,
+        <GameMenuItem pageName='TBD5' />,
         <GameMenuItem pageName="Choose Player Name">
-          <form onSubmit={(event) => handleFormEvent(event, 'playerNamesSubmit', gameMenuContext)}>
+          <form onSubmit={ e => handleFormEvent(e, 'playerNamesSubmit', gameMenuContext) }>
             <fieldset>
               <legend>Player Names</legend>
               <label>
                 First Player:
-                <input type="text" name="firstPlayer" value={gameMenuContext.formData.playerNames[0]} onChange={(event) => handleFormEvent(event, 'playerName1Change', gameMenuContext)} />
+                <input type="text" name="firstPlayer" value={gameMenuContext.formData.playerNames[0]} onChange={ e => handleFormEvent(e, 'playerName1Change', gameMenuContext) } />
               </label>
               <label>
                 Second Player:
-                <input type="text" name="secondPlayer" value={gameMenuContext.formData.playerNames[1]} onChange={(event) => handleFormEvent(event, 'playerName2Change', gameMenuContext)} />
+                <input type="text" name="secondPlayer" value={gameMenuContext.formData.playerNames[1]} onChange={ e => handleFormEvent(e, 'playerName2Change', gameMenuContext) } />
               </label>
               <input type="submit" value="Enter" />
             </fieldset>
           </form>
-        </GameMenuItem>
+        </GameMenuItem>,
         <GameMenuItem pageName="AI Difficulty">
-          <form onSubmit={(event) => handleFormEvent(event, 'aiDifficultySubmit', gameMenuContext)}>
+          <form onSubmit={ e => handleFormEvent(e, 'aiDifficultySubmit', gameMenuContext)}>
             <fieldset>
               <legend>AI Difficulty:</legend>
               <label>
-                Choose AI level:
-                <select name="aiDifficulty" id="aiDifficultySelect" onChange={(event) => handleFormEvent(event, 'aiDifficultyChange', gameMenuContext)} />
+                Choose AI level: { aiDifficultySelectElement(gameMenuContext) }
               </label>
               <input type="submit" value="Select" />
             </fieldset>
           </form>
         </GameMenuItem>
-      </>);
-    }} />
+      ]);
+    }}/>
   );
 }
 
-function populateBoardSizeSelect(selectElement, min, max, defaultValue) {
-  for (let i = min; i < max; i++) {
-    const optionElement = document.createElement("option");
-    optionElement.textContent = `${i} x ${i}`;
-    optionElement.value = i;
-    if (i == defaultValue)
-      optionElement.selected = 'selected';
-    selectElement.appendChild(optionElement);
-  }
-}
-
-function populateAiDifficultyList(selectElement, allowedTypes, defaultValue) {
-  for (const type of allowedTypes) {
-    const optionElement = document.createElement("option");
-    optionElement.textContent = type;
-    if (type == defaultValue)
-      optionElement.selected = true;
-    selectElement.appendChild(optionElement);
-  }
+function createSelect(entries, defaultValue, { name, id, onChange, className={}}) {
+  return (
+    <select {...{className, name, id, onChange, defaultValue}}>
+      {
+        entries.map((entry, index) => (
+          <option key={ index } value={ entry }>{ entry }</option>
+        ))
+      }
+    </select>
+  );
 }

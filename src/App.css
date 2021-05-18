@@ -112,14 +112,17 @@ body {
   cursor: pointer;
   color: #777;
   border: none;
+  margin: 20px auto 20px auto;
+  display: block;
+  white-space: nowrap;
   background: none;
   background-size: 100% 1px, 100% 1px, auto;
-  background-position: 0% 100%, 0% 0%, 50% 0%;
+  background-position: 50% 100%, 50% 0%, 50% 0%;
   background-repeat: no-repeat, no-repeat;
   background-image:
-    linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.8), rgba(0,0,0,0)), 
-    linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.8), rgba(0,0,0,0)),
-    radial-gradient(50% 100%, ellipse, rgba(0,0,0,0.1), rgba(0,0,0,0) 50%);
+    linear-gradient(90deg,rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0)), 
+    linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.5), rgba(0,0,0,0)),
+    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0));
 }
 
 .gameMenuButton:hover {
@@ -127,30 +130,30 @@ body {
   background-size: 100% 2px, 100% 2px, auto;
 }
 
-.fade-enter {
+.gameMenuItem-enter {
   opacity: 0;
   transform: translateX(-100%);
 }
-.fade-enter-active {
+.gameMenuItem-enter-active {
   opacity: 1;
   transform: translateX(0%);
 }
-.fade-exit {
+.gameMenuItem-exit {
   opacity: 1;
   transform: translateX(0%);
 }
-.fade-exit-active {
+.gameMenuItem-exit-active {
   opacity: 0;
   transform: translateX(100%);
 }
-.fade-enter-active, .fade-exit-active {
+.gameMenuItem-enter-active, .gameMenuItem-exit-active {
   transition: opacity 500ms, transform 500ms;
 }
 
 .gameMenuModal {
   display: block;
   position: fixed;
-  z-index: 1;
+  z-index: 2;
   left: 0;
   top: 0;
   width: 100%;
@@ -160,21 +163,30 @@ body {
 }
 
 .gameMenuModalContent {
+  display: flex;
+  flex-direction: column;
   background-color: #fefefe;
   margin: 15% auto;
   padding: 0px!important;
-  border: 1px solid #2c2c2c;
+  border: 1px solid #5c5c5c;
   border-radius: 8px;
   overflow: hidden;
-  width: 80%;
+  width: min-content;
+  min-width: 30em;
+  min-height: 20em;
   box-shadow: 0 0 15px #777777;
 }
 
 .gameMenuModalHeader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   text-align: center;
+  white-space: nowrap;
   color: #2C2C2C;
   padding: 10px;
-  border-bottom: thin solid #777777;
+  height: min-content;
+  border-bottom: thin solid #7a7a7a;
 }
 
 .gameMenuModalBody {
@@ -183,8 +195,20 @@ body {
 }
 
 .gameMenuModalFooter {
-  border-top: thin solid #777777;
+  margin-top: auto;
+  border-top: thin solid #7a7a7a;
+  white-space: nowrap;
+  height: min-content;
+  width: 100%;
   text-align: center;
   padding: 10px;
   color: #2c2c2c;
+}
+
+.gameMenuModalFooter > button {
+  border-radius: 5px;
+  background: #36559c;
+  color: white;
+  padding: 8px 14px;
+  border: none;
 }
