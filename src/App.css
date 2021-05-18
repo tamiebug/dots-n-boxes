@@ -183,7 +183,7 @@ body {
   color: #2c2c2c;
 }
 
-.gameMenuModalFooter > button {
+.gameMenuModalFooter > button, .selectableMenu button {
   border-radius: 5px;
   background: #36559c;
   color: white;
@@ -237,3 +237,48 @@ body {
   transition: opacity 500ms, transform 500ms;
 }
 
+.selectableMenu {
+  min-width: 40em;
+}
+
+.selectableMenu button {
+  margin: 1em 6em;
+}
+.selectableMenu table {
+  width: 100%;
+}
+.selectableMenu body {
+  overflow-y: auto;
+  width: 100%;
+}
+.selectableMenu tr {
+  color: white;
+  background: #121212;
+}
+
+.selectableMenu td, .selectableMenu th {
+  padding: 1em;
+}
+
+.selectableMenu th {
+  background: #303030;
+}
+
+.selectableMenu tr.selected {
+  background: #4d4d4d;
+  border: thin solid #999999;
+}
+
+.selectableMenu tr:hover {
+  background: #424242;
+  border: thin solid #666666;
+}
+
+.selectableMenu tr:nth-child(even) {
+  background: #303030;
+}
+
+.selectableMenu .tableButtons {
+  display: flex;
+  justify-content: space-between;
+}

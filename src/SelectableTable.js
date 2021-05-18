@@ -1,5 +1,6 @@
 import React , { Component } from "react";
 
+/*
 		case "remote":
 				if (settings.isHost) {
 					player1 = new LocalHumanPlayer(settings.playerName1);
@@ -11,16 +12,16 @@ import React , { Component } from "react";
 					player2 = new LocalHumanPlayer(settings.playerName2);
 					// DO post-player creation setup / connection?
 				}
-
+*/
 
 
 export class SelectableTable extends Component {
   /**
-   * A Bootstrap table with selectable rows, buttons, and modifiable data.
+   * A Table with selectable rows, buttons, and modifiable data.
    * An example on class use can be found underneath definition.
    */
   state = {
-    /* Integer.Currently selected row in table.  -1 indicates no selected row */
+    /* Integer.  Currently selected row in table.  -1 indicates no selected row */
     selectedRow: -1,
     /* Array.  Table data in row-major javascript Array. */
     data: this.props.data,
@@ -39,34 +40,36 @@ export class SelectableTable extends Component {
   render() {
     this.validateState();
     const totalColumnLengths = this.state.columnLengths.reduce((a,b) => a + b, 0);
-    const percentageColumnLengths = this.state.columnLengths.map((e, i) => 100 * e / totalColumnLengths);
+    const percentageColumnLengths = this.state.columnLengths.map( length => 100 * length / totalColumnLengths);
+    console.log(percentageColumnLengths);
+    const prefix = this.props.prefix || 'btn';
 
     return (
-      <div className="selectable-menu">
-        <table className="table table-striped table-hover table-dark">
+      <div className="selectableMenu">
+        <table>
           <thead>
             <tr>
               {this.state.columnLengths.map((length, index) => {
-                return <th style={{width: `${percentageColumnLengths[index]}%`}} key={index}>{this.state.columnNames[index]}</th>
+                return <th style={{width: `${percentageColumnLengths[index]}%`}} key={index}>{this.state.columnNames[index]}</th>;
               })}
             </tr>
           </thead>
-          <tbody style={{overflowY: 'auto'}}>
-            {this.state.data.map((row, index) => {
+          <tbody>
+            { this.state.data.map((dataRow, index) => {
               return (
-                <tr key={index} onClick={() => this.setState({selectedRow: index})}
-                 className={this.state.selectedRow==index ? 'table-dark' : ''}>
-                {row.cells.map((text, colIndex) => {
-                  return <td style={{width: `${percentageColumnLengths[colIndex]}%`}} key={colIndex}>{text}</td>
-                })}
+                <tr key={ dataRow.key } onClick={() => this.setState({ selectedRow: index })}
+                 className={ this.state.selectedRow == index ? 'selected' : '' }>
+                  { dataRow.cells.map((text, colIndex) => {
+                    return <td style={ {width: `${percentageColumnLengths[colIndex]}%`} } key={ colIndex }>{ text }</td>;
+                  })}
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
-        <div className="selectable-menu-buttons d-flex justify-content-between">
+        <div className="tableButtons">
           {this.state.buttonLabels ? this.state.buttonLabels.map((label, index) => {
-            return <button type="button" className={`btn btn-secondary btn-lg btn-${index}`} onClick={this.getWrappedButtonCallback(index)} key={index}>{label}</button>
+            return <button type="button" className={`${prefix}-${index}`} onClick={this.getWrappedButtonCallback(index)} key={index}>{label}</button>;
           }) : ""}
         </div>
       </div>
@@ -77,7 +80,7 @@ export class SelectableTable extends Component {
     if (this.state.columnLengths === undefined) {
       throw `Desired column widths array not passed in`;
     } else if (this.state.columnNames === undefined) {
-      throw `Desired column names array not passed in`
+      throw `Desired column names array not passed in`;
     } else if (this.state.columnNames.length !== this.state.columnLengths.length) {
       throw `Length mismatch: columnNames contains ${this.state.columnNames.length} entries while columnLengths contains ${this.state.columnLengths.length} entries`;
     } else if (this.state.columnLengths.length !== this.state.data[0].cells.length) {
@@ -99,7 +102,7 @@ export class SelectableTable extends Component {
     return () => rawCallback({
       data: this.state.data,
       selectedRow: this.state.selectedRow,
-      updater: (settings) => this.updateTable(settings),
+      updater: settings => this.updateTable(settings),
     });
   }
 

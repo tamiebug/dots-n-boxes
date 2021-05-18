@@ -1,6 +1,7 @@
 import React from "react";
 import { ALLOWED_DIFFICULTIES, MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "./GameContext.js";
 import { GameMenu, GameMenuItem } from './GameMenu.js';
+import { SelectableTable } from "./SelectableTable.js";
 
 export function GameStartPanelMenu(props) {
 
@@ -140,4 +141,56 @@ function createSelect(entries, defaultValue, { name, id, onChange, className={}}
       }
     </select>
   );
+}
+
+function OnlineGamesTable(props) {
+  return (
+    <SelectableTable
+      columnLengths={[3, 2, 7]}
+      buttonLabels={["Move Up", "Move Down"]}
+      buttonCallbacks={[
+        settings => specialFoo(settings),
+        settings => specialFoo2(settings),
+      ]}
+      columnNames={[
+        "Name",
+        "size",
+        "Comments"
+      ]}
+      data={[
+        {key: 1, cells: ['Tamie', '3x3', 'No Rush 20!!']},
+        {key: 2, cells: ['Paul', '5x5', 'Play me.']},
+        {key: 3, cells: ['Tamie', '3x3', 'No Rush 20!!']},
+        {key: 4, cells: ['Paul', '5x5', 'Play me.']},
+        {key: 5, cells: ['Paul', '4x4', 'Play me plserino?']},
+      ]}
+    />
+  );
+}
+
+function specialFoo(settings) {
+  if (settings.selectedRow === undefined) return;
+  if (settings.data === undefined) return;
+
+  const data = settings.data.map((row, index) => {
+    return {
+      key: row.key + 1,
+      cells: row.cells
+    };
+  });
+  settings.updater({data: data});
+
+}
+
+function specialFoo2(settings) {
+  if (settings.selectedRow === undefined) return;
+  if (settings.data === undefined) return;
+
+  const data = settings.data.map((row, index) => {
+    return {
+      key: row.key - 1,
+      cells: row.cells
+    };
+  });
+  settings.updater({data: data});
 }
