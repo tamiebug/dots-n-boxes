@@ -66,19 +66,19 @@ export function GameStartPanelMenu(props) {
   return (
     <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={props.previousSettings} items={ gameMenuContext => {
       const { formData, linkTo } = gameMenuContext;
-      return ([
-        <GameMenuItem pageName="Home Page">
+      return ({
+        "Home Page" : <GameMenuItem>
           <button className="gameMenuButton" onClick={ e => linkTo("Choose Opponent Type") }>
             Play Locally
           </button>
-          <button className="gameMenuButton" onClick={ e => linkTo(2) }>
+          <button className="gameMenuButton" onClick={ e => linkTo("Choose Player Name") }>
             Play Over Network
           </button>
           <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'useSavedSettings', gameMenuContext); } }>
              Use {props.appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings
           </button>
         </GameMenuItem>,
-        <GameMenuItem pageName="Choose Opponent Type">
+        "Choose Opponent Type" : <GameMenuItem>
           <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'aiPlayerGame', gameMenuContext); }}>
             Vs AI?
           </button>
@@ -86,9 +86,7 @@ export function GameStartPanelMenu(props) {
             Vs Local Player?
           </button>
         </GameMenuItem>,
-        <GameMenuItem pageName="TBD2" />,
-        <GameMenuItem pageName="TBD3" />,
-        <GameMenuItem pageName="Board Size">
+        "Board Size" : <GameMenuItem>
           <form onSubmit={ e => handleFormEvent(e, 'boardSizeSubmit', gameMenuContext) }>
             <fieldset>
               <legend>Board Size</legend>
@@ -100,8 +98,7 @@ export function GameStartPanelMenu(props) {
             </fieldset>
           </form>
         </GameMenuItem>,
-        <GameMenuItem pageName='TBD5' />,
-        <GameMenuItem pageName="Choose Player Name">
+        "Choose Player Name" : <GameMenuItem>
           <form onSubmit={ e => handleFormEvent(e, 'playerNamesSubmit', gameMenuContext) }>
             <fieldset>
               <legend>Player Names</legend>
@@ -117,7 +114,7 @@ export function GameStartPanelMenu(props) {
             </fieldset>
           </form>
         </GameMenuItem>,
-        <GameMenuItem pageName="AI Difficulty">
+        "AI Difficulty" : <GameMenuItem>
           <form onSubmit={ e => handleFormEvent(e, 'aiDifficultySubmit', gameMenuContext)}>
             <fieldset>
               <legend>AI Difficulty:</legend>
@@ -128,7 +125,7 @@ export function GameStartPanelMenu(props) {
             </fieldset>
           </form>
         </GameMenuItem>
-      ]);
+      });
     }}/>
   );
 }

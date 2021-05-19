@@ -32,17 +32,17 @@ export function AppSettingsMenu(props) {
   return (
     <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={props.appSettings} items={gameMenuContext => {
       const { formData } = gameMenuContext;
-      return ([
-        <GameMenuItem pageName="Application Settings">
+      return ({
+        "Application Settings": <GameMenuItem>
           <form id="AppSettingsForm" onSubmit={(event) => handleFormEvent(event, 'saveAppSettings', gameMenuContext)}>
             <fieldset>
               <legend> Debugging Settings </legend>
               <label> Debug Mode
-                <input type="checkbox" value="debugMode" name="Debug Mode" checked={formData.debugMode}
+                <input type="checkbox" value="debugMode" name="Debug Mode" defaultChecked={formData.debugMode}
                   onClick={event => handleFormEvent(event, 'debugModeChanged', gameMenuContext)} />
               </label>
               <label> Show Move Ranges
-                <input type="checkbox" value="showMoveRanges" name="Show Move Ranges" checked={formData.showMoveRanges}
+                <input type="checkbox" value="showMoveRanges" name="Show Move Ranges" defaultChecked={formData.showMoveRanges}
                   onClick={event => handleFormEvent(event, 'showMoveRangesChanged', gameMenuContext)} />
               </label>
             </fieldset>
@@ -57,7 +57,7 @@ export function AppSettingsMenu(props) {
             <input type="Submit" value="Save Settings" />
           </form>
         </GameMenuItem>
-      ]);
+      });
     }} />
   );
 }
