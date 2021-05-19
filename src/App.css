@@ -125,31 +125,6 @@ body {
     radial-gradient(ellipse 50% 50% at 50% 100%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0));
 }
 
-.gameMenuButton:hover {
-  text-shadow: 1px 1px rgba(0,0,0,0.25);
-  background-size: 100% 2px, 100% 2px, auto;
-}
-
-.gameMenuItem-enter {
-  opacity: 0;
-  transform: translateX(-100%);
-}
-.gameMenuItem-enter-active {
-  opacity: 1;
-  transform: translateX(0%);
-}
-.gameMenuItem-exit {
-  opacity: 1;
-  transform: translateX(0%);
-}
-.gameMenuItem-exit-active {
-  opacity: 0;
-  transform: translateX(100%);
-}
-.gameMenuItem-enter-active, .gameMenuItem-exit-active {
-  transition: opacity 500ms, transform 500ms;
-}
-
 .gameMenuModal {
   display: block;
   position: fixed;
@@ -163,10 +138,13 @@ body {
 }
 
 .gameMenuModalContent {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   background-color: #fefefe;
-  margin: 15% auto;
   padding: 0px!important;
   border: 1px solid #5c5c5c;
   border-radius: 8px;
@@ -212,3 +190,50 @@ body {
   padding: 8px 14px;
   border: none;
 }
+
+.gameMenuButton:hover {
+  text-shadow: 1px 1px rgba(0,0,0,0.25);
+  background-size: 100% 2px, 100% 2px, auto;
+}
+
+.gameMenuItem-enter {
+  opacity: 0;
+  transform: translate(-150%, -50%);
+}
+.gameMenuItem-enter-active {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+.gameMenuItem-exit {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+.gameMenuItem-exit-active {
+  opacity: 0;
+  transform: translate(50%, -50%);
+}
+
+.gameMenuItem-reverse-exit {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+.gameMenuItem-reverse-exit-active {
+  opacity: 0;
+  transform: translate(-150%, -50%);
+}
+
+.gameMenuItem-reverse-enter {
+  opacity: 0;
+  transform: translate(50%, -50%);
+}
+
+.gameMenuItem-reverse-enter-active {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+.gameMenuItem-enter-active, .gameMenuItem-exit-active, .gameMenuItem-reverse-enter-active, .gameMenuItem-reverse-exit-active {
+  transition: opacity 500ms, transform 500ms;
+}
+

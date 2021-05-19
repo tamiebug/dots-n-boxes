@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SwitchTransition, CSSTransition } from 'react-transition-group';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 
 export function GameMenu(props) {
@@ -7,16 +7,19 @@ export function GameMenu(props) {
 
   const [ currentMenuPage, setCurrentMenuPage ] = useState(props.startingItemName);
   const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
+  const [ isUndoAction, setIsUndoAction ] = useState(false);
 
   const context = { 
     linkTo: (destination, undo) => {
       if (undo) {
         const [lastPage, ...restOfPages] = previousMenuPages;
         setPreviousMenuPages(restOfPages);
+        setIsUndoAction(true);
         setCurrentMenuPage(lastPage);
       } else {
         setPreviousMenuPages([currentMenuPage, ...previousMenuPages]);
         setCurrentMenuPage(destination);
+        setIsUndoAction(false);
       }
     },
     menuName: props.name,
@@ -25,25 +28,26 @@ export function GameMenu(props) {
     currentPage: currentMenuPage,
   };
 
+  const classNames = `gameMenuItem${isUndoAction ? "-reverse" : ""}`;
   return (
     <div className="gameMenuModal">
-      <SwitchTransition mode={"out-in"}>
+      <TransitionGroup childFactory={ element => React.cloneElement( element, { classNames })}>
         <CSSTransition
           key={ currentMenuPage }
-          classNames='gameMenuItem'
-          addEndListener={(node, done) => node.addEventListener("transitionend", done, false)}
+          classNames={ `gameMenuItem${isUndoAction ? "-reverse" : ""}` }
+          timeout={500}
         >
           <div className="gameMenuModalContent">
             <div className="gameMenuModalHeader">
               <h2> { currentMenuPage } </h2>
             </div>
-            { props.items(context)[currentMenuPage] }
+            { props.items(context)[currentMenuPage ] }
             <div className="gameMenuModalFooter">
               { previousMenuPages.length > 0 && <button type="button" onClick={() => context.linkTo(undefined, true)}> Previous </button>}
             </div>
           </div>
         </CSSTransition>
-      </SwitchTransition>
+      </TransitionGroup>
     </div>
   );
 }
