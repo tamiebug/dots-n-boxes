@@ -281,3 +281,7 @@ body {
   display: flex;
   justify-content: space-between;
 }
+
+.validatedNameInput {
+  background: lightGreen;
+}

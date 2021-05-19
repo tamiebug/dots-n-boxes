@@ -5,6 +5,16 @@ import { GameMenu, GameMenuItem } from './GameMenu.js';
 import { SelectableTable } from "./SelectableTable.js";
 
 export function GameStartPanelMenu(props) {
+  const [ ioSocket, setIoSocket ] = useState(null);
+
+  useEffect(() => {
+    return function cleanup() {
+      // If ioSocket responsibility has been passed to another object... then it will be set to null to avoid this horrible fate
+      if (ioSocket) {
+        ioSocket.disconnect();
+      }
+    }
+  }, []);
 
   const boardSizeSelectElement = context => createSelect(
     [...Array(MAX_BOARD_SIZE - MIN_BOARD_SIZE)].map((_, index) => `${index + MIN_BOARD_SIZE} x ${index + MIN_BOARD_SIZE}`),
@@ -28,6 +38,16 @@ export function GameStartPanelMenu(props) {
         break;
       case 'playerName2Change':
         setFormData({ ...formData, playerNames: formData.playerNames.map((name, i) => i == 1 ? event.target.value : name) });
+        break;
+      case 'onlineNameChange':
+        setFormData({...formData, onlineName: event.target.value});
+        break;
+      case 'onlinePlayerNameSelected':
+        const { name , socket } = event.target;
+        setIoSocket(socket);
+        setFormData({...formData, onlineName: name });
+        console.log(formData);
+        linkTo("Available Games List");
         break;
       case 'boardSizeChange':
         setFormData({ ...formData, boardSize: event.target.value });
@@ -87,6 +107,12 @@ export function GameStartPanelMenu(props) {
           <button className="gameMenuButton" onClick={ e => { e.preventDefault(); handleFormEvent(e, 'localPlayerGame', gameMenuContext); }}>
             Vs Local Player?
           </button>
+        </GameMenuItem>,
+        "Choose Online Name": <GameMenuItem>
+          <OnlineNameSelector defaultValue={ formData.onlineName } nameChosenCallback={ e => handleFormEvent(e, "onlinePlayerNameSelected", gameMenuContext )} />
+        </GameMenuItem>,
+        "Available Games List": <GameMenuItem>
+          <OnlineGamesTable />
         </GameMenuItem>,
         "Board Size" : <GameMenuItem>
           <form onSubmit={ e => handleFormEvent(e, 'boardSizeSubmit', gameMenuContext) }>
@@ -171,5 +197,59 @@ function OnlineGamesTable(props) {
       selectedRow={ selectedRow }
       setSelectedRow={ row => setSelectedRow(row) }
     />
+  );
+}
+
+function OnlineNameSelector(props) {
+  const [ currentName, setCurrentName ] = useState(props.defaultValue || "");
+  const [ currentIoSocket, setCurrentIoSocket ] = useState(null);
+  const [ nameValid, setNameValid ] = useState(false);
+
+  const nameInput = <input className={`${nameValid ? "validatedNameInput" : ""}`}
+    type="text" name="onlineName" value={ currentName } 
+    onChange={ e => {setCurrentName(e.target.value); setNameValid(false)} } />;
+
+  useEffect(() => {
+    setCurrentIoSocket(io("http://localhost:950"));
+
+    return function cleanup() {
+      // The idea here is if socket is null, means GameStartPanelMenu is now responsible for it, onSubmit() was called.
+      // If it's not null, then we never called onSubmit() successfully, hence I want to manually close the connection right now.
+      if (currentIoSocket) {
+        currentIoSocket.close();
+        setCurrentIoSocket(null);
+        console.log("OnlineNameSelector disconnected from socket");
+      } else {
+        console.log("OnlineNameSelector had nothing to disconnect from, responsibility passed up");
+      }
+    }
+  }, []);
+
+  function checkForAvailability() {
+    currentIoSocket.emit('check_name_availability', response => {
+      if (response.available == true) {
+        setNameValid(true);
+      } else {
+        nameInput.setCustomValidity(`${currentName} is not available`);
+      }
+    });
+  }
+
+  function onSubmit() {
+    setCurrentIoSocket(null);
+    props.nameChosenCallback({ target: { name: currentName, socket: currentIoSocket }});
+  }
+
+  // on submit... props.nameChosenCallback
+  // to get default value... props.defaultValue.
+  return (
+    <form onSubmit={ () => onSubmit() }>
+      <fieldset>
+        <legend> Choose Name </legend>
+        { nameInput }
+        <input type="submit" value="Check If Available" onClick={ e => checkForAvailability() } />
+      </fieldset>
+      <input type="submit" value="Select Name" disabled={ !nameValid }/>
+    </form>
   );
 }
