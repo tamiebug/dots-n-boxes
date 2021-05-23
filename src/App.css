@@ -12,7 +12,6 @@ body {
   display: inline-flex;
 }
 
-
 #playerNameDisplay {
   text-align: center;
 }
@@ -183,7 +182,7 @@ body {
   color: #2c2c2c;
 }
 
-.gameMenuModalFooter > button, .selectableMenu button {
+.gameMenuModalFooter > button, .tableButtons button {
   border-radius: 5px;
   background: #36559c;
   color: white;
@@ -241,11 +240,10 @@ body {
   min-width: 40em;
 }
 
-.selectableMenu button {
-  margin: 1em 6em;
-}
 .selectableMenu table {
   width: 100%;
+  border-radius: 5px;
+  overflow: hidden;
 }
 .selectableMenu body {
   overflow-y: auto;
@@ -277,9 +275,17 @@ body {
   background: #4d4d4d;
   border: thin solid #999999;
 }
-.selectableMenu .tableButtons {
+
+.tableButtons {
   display: flex;
   justify-content: space-between;
+}
+
+.tableButtons button, .gameLobbyDiv button{
+  margin: 1em 4em 0em 4em;
+  white-space: nowrap;
+  background: #4d4d4d;
+  border: thin solid black;
 }
 
 .validatedNameInput {
