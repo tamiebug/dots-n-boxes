@@ -57,12 +57,12 @@ export function ControlPanel(props) {
     setPreviousSettings({...settings});
     if (props.appSettings.savePreviousMatchSettings === true) {
       const stringifiedSettings = JSON.stringify(settings);
-      window.localStorage.setItem('Previous Game Settings', JSON.stringify(settings));
+      window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
     }
     applySettings(gameStateDispatch, {...settings}, props.appSettings);
   }
 
-  return gameState.gameBoardState == null ? null : (
+  return gameBoardState == null ? null : (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
       {showStartMenu == true && <GameStartPanelMenu 
         name="GameMenu"

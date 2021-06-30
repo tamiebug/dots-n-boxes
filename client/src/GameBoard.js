@@ -9,11 +9,11 @@ const mouseEvents = Object.freeze({
 	LEAVE:	Symbol("leave")
 });
 
-export function GameBoard(props) {
+export function GameBoard() {
 	const [selectedCoordinate, setSelectedCoordinate] = useState(null);
 	const [highlightedPotentialMove, setHighlightedPotentialMove] = useState(null);
 	const { gameState } = useContext(GameStateContext);
-	const { players, gameBoardState, currentPlayer } = gameState;
+	const { players, gameBoardState } = gameState;
 
 	if (gameState.gameBoardState == null)
 		return null;
@@ -97,7 +97,8 @@ export function GameBoard(props) {
 
 		// TODO:  Potentially move this into the reducer, 'onLocalMoveAttempt' action maybe?
 		if (gameBoardState.isMovePossible(move)) {
-			players[currentPlayer].onLocalMoveAttempt(move);
+			players.forEach( player => player.onLocalMoveAttempt(move));
+			//players[currentPlayer].onLocalMoveAttempt(move);
 		}
 	}
 
@@ -116,12 +117,12 @@ export function GameBoard(props) {
 		return;
 	}
 
-	function highlightDot(row, column) {
+	function highlightDot() {
 		//TODO: Implement highlightDot & unHighlightDot
 		return;
 	}
 
-	function unHighlightDot(row, column) {
+	function unHighlightDot() {
 		//TODO: Implement highlightDot & unHighlightDot
 		return;
 	}

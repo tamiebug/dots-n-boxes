@@ -1,4 +1,4 @@
-import { Move, SquareGrid } from "./utility.js";
+import { Move } from "./utility.js";
 
 export const playerEvents = Object.freeze({
   SUBMIT_MOVE:  Symbol("submit move"),
@@ -218,7 +218,7 @@ export class Player {
     throw new Error(this.constructor.name + 'does not implement generateNextMove functionality');*/
   }
 
-  onLocalMoveAttempt(move) {
+  onLocalMoveAttempt() {
     /*
     //  Keep empty if not using local GameBoard actions to determine move
     throw new Error(this.constructor.name + 'does not implement onLocalMoveAttempt functionality');*/
@@ -317,7 +317,7 @@ export class RandomPlayer extends Player {
     super(name);
   }
 
-  onLocalMoveAttempt(move) {
+  onLocalMoveAttempt() {
     // ignore
     return;
   }
@@ -335,14 +335,30 @@ export class RemotePlayer extends Player {
    */
   constructor(name) {
     super(name);
+    this.outgoingMoveCallback = null;
+    this.lastLocalMove = null;
   }
 
-  onLogicalMoveAttempt(move) {
-    //TODO: everything
+  onLocalMoveAttempt( move ) {
+    console.log(`REMOTE received localMoveAttempt ${JSON.stringify(move)}`);
+    this.lastLocalMove = move;
+  }
+
+  registerOutgoingMoveCallback( cb ) {
+    this.outgoingMoveCallback = cb;
+  }
+
+  onOnlineMoveAttempt( move ) {
+    if (this._myTurn) this.performMove( move );
   }
 
   generateNextMove() {
-    //TODO: everything
+    console.log("REMOTE generateNextMove");
+    if (this.lastLocalMove) {
+      console.log(`generateNextMove generated ${this.lastLocalMove}`);
+      this.outgoingMoveCallback( this.lastLocalMove );
+    }
+    this.lastLocalMove = null;
   }
 }
 
@@ -356,7 +372,7 @@ export class WeakAI extends Player {
     super(name);
   }
 
-  onLocalMoveAttempt(move) {
+  onLocalMoveAttempt() {
     //ignore
     return;
   }
@@ -365,7 +381,7 @@ export class WeakAI extends Player {
     if (this._currentState == null) {
       throw new Error("WeakAI generateNextMove called with null _currentState");
     }
-    const strategyPromise = new Promise((resolve, reject) => {
+    const strategyPromise = new Promise( resolve => {
       const squareCompleters = this._currentState.findSquareCompletingMoves();
       if (squareCompleters.length > 0) {
         resolve(squareCompleters);
@@ -391,7 +407,7 @@ export class WeakAI extends Player {
         return;
       }
     });
-    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => this.performMove(moves));
+    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then( ([, moves]) => this.performMove(moves));
   }
 }
 
@@ -421,7 +437,7 @@ export class BasicAI extends Player {
     ];
   }
 
-  onLocalMoveAttempt(move) {
+  onLocalMoveAttempt() {
     //ignore
     return;
   }
@@ -431,15 +447,13 @@ export class BasicAI extends Player {
       throw new Error("BasicAI generateNextMove called with null _currentState");
     }
 
-    const moveDelay = 600;
-
     const squareCompletionMakers = findCompletableSquareMakers(this._currentState);
     const squareCompleters = this._currentState.findSquareCompletingMoves();
     const taggedChains = groupMovesIntoTaggedChains(this._currentState, squareCompleters, squareCompletionMakers);
 
     this._gameCallback({ type: playerEvents.AI_SHOW_CHAINS, chains: turnTaggedChainsIntoBoxArrays(taggedChains, this._currentState) });
 
-    const strategyPromise = new Promise((resolve, reject) => {
+    const strategyPromise = new Promise( resolve => {
       for (const moveSuggester of this.strategy) {
         //console.log(`executing strategy: ${moveSuggester.name}`);
 
@@ -460,7 +474,7 @@ export class BasicAI extends Player {
       }
     });
 
-    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then(([_, moves]) => {
+    Promise.all([timeoutPromise(this._moveDelay), strategyPromise]).then( ([, moves]) => {
       this._gameCallback({ type: playerEvents.AI_HIDE_CHAINS });
       this.performMove(moves);
     });
@@ -605,13 +619,13 @@ function doublyActive4pChainMoves(taggedChains, currentState) {
   return doublyActive4_chainMoves;
 }
 
-function freeDoublyActive3ChainMoves(taggedChains, currentState) {
+/*function freeDoublyActive3ChainMoves(taggedChains, currentState) {
   // List moves in doubly-active 3-chains that can be automatically taken
   if (taggedChains.filter(chain => (chain.moves.length == 2).length > 0 && chain.active &&!chain.doublyActive)) {
     const doublyActive3_chains = taggedChains.filter(chain => (chain.moves.length == 3 && chain.doublyActive));
     return currentState.findSquareCompletingMoves(flattenIntoMoves(doublyActive3_chains));
   }
-}
+}*/
 
 function freeSinglyActive2ChainMoves(taggedChains, currentState) {
   // List moves in singly-active 2-chains that don't affect who goes first in consequential chains next
@@ -708,14 +722,13 @@ function smallestInactiveChainMoves(taggedChains) {
   }
 }
 
-function fallthroughMovesFunction(taggedChains) {
+function fallthroughMovesFunction() {
   // List no moves; Throw error and start debugger if called.
-  debugger;
   throw new Error("Reached the fallthrough in the players decision-making list.");
 }
 
 function timeoutPromise(delay) {
-  return new Promise((resolve, reject) => setTimeout(resolve, delay));
+  return new Promise( resolve => setTimeout(resolve, delay));
 }
 
 function turnTaggedChainsIntoBoxArrays(taggedChains, gameBoard) {

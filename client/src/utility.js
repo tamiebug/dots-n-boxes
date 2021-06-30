@@ -1,5 +1,3 @@
-import { TaggedChain } from "./players.js";
-
 export const mouseTracker = {
 	// We need to know of the current mouse state for some functionalities
 	mouseButtonDown : false,
@@ -349,8 +347,10 @@ export class TaggedGrid {
 
     for (let r = 0; r < this.nRows; r++) {
       for (let c = 0; c < this.nColumns; c++) {
-        // Yeah, I just destructured into a computed property name and already-existing variable using assignment-without-declaration syntax.  Bite me, Andy
-        if (newGrid.taggedGrid.tag) ({[tag]: undefined, ...newGrid.taggedGrid[r][c]} = newGrid.taggedGrid[r][c]);
+        if (newGrid.taggedGrid[r][c][tag]) {
+          newGrid.taggedGrid[r][c] = Object.assign({}, newGrid.taggedGrid[r][c]);
+          delete newGrid.taggedGrid[r][c][tag];
+        }
       }
     }
     return newGrid;
@@ -410,35 +410,6 @@ export class MoveHistory {
       player: entry.player
     })));
   }
-}
-
-function deepFreeze(object) {
-  /* Take caution when using -- there can be no cyclical references within
-   * object to be frozen, and no objects within the chain of freezing that
-   * you don't want to freeze
-   */
-  var props = Object.getOwnPropertyNames(object);
-  for (let name of props) {
-    let value = object[name];
-    if (value && typeof value == "object") {
-      deepFreeze(value);
-    }
-  }
-  return Object.freeze(object);
-}
-
-export function loadTaggedChainsFromJSON(filepath) {
-  const JSON = require(filepath);
-  return JSON.map(chainArray => chainArray.map(chain => TaggedChain.fromJSON(chain)));
-}
-
-export function loadMoveHistoryFromJSON(filepath) {
-  return require(filepath).map(entry => ({
-      move: Move.fromJSON(entry.move),
-      range: entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
-      player: entry.player
-    })
-  );
 }
 
 export function printObjectToJSON(object, replacer = null) {

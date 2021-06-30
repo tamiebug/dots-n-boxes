@@ -1,12 +1,14 @@
-import { createContext, useReducer, useEffect } from "react";
+import { createContext, useReducer, useEffect, useContext } from "react";
 import { Move, MoveHistory, SquareGrid , TaggedGrid, printObjectToJSON } from "./utility.js";
-import { Player, LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI } from "./players.js";
+import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI, RemotePlayer } from "./players.js";
+import { SocketContext } from "./SocketContext.js";
+
 
 // Useful constants extracted here for easy changing
 export const NUMBER_PLAYERS = 2;
 export const MAX_BOARD_SIZE = 30;
 export const MIN_BOARD_SIZE = 3;
-export const ALLOWED_GAME_TYPES = ['CPU', 'local'];
+export const ALLOWED_GAME_TYPES = ['CPU', 'local', 'online'];
 export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 
 export const GameStateContext = createContext();
@@ -27,12 +29,22 @@ export const initialGameState = {
 export function useGameStateStore(appSettings) {
 	const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
 	const { players, gameBoardState } = gameState;
+	const { registerOnlineMoveCallback, attemptOnlineMove } = useContext(SocketContext);
 
 	useEffect(() => {
 		if (gameState.numberMovesCompleted > -1) {
 			gameState.players[gameState.currentPlayer].startTurn();
     }
 	}, [gameState.numberMovesCompleted]);
+
+	useEffect(() => {
+		registerOnlineMoveCallback( incomingMoveCallback );
+		players.forEach( player => {
+			if (player instanceof RemotePlayer) {
+				player.registerOutgoingMoveCallback(attemptOnlineMove);
+			}
+		});
+	}, [ players ]);
 
   useEffect(() => {
     if (gameBoardState == null) return;
@@ -52,6 +64,15 @@ export function useGameStateStore(appSettings) {
       if (appSettings.debugMode && window.confirm(`Would you like to show JSON of last match's moves?`)) printObjectToJSON(gameState.moveHistory);
     }
   }, [ gameState.gameActive ]);
+
+	function incomingMoveCallback( move ) {
+		players.forEach( player => {
+			if (player instanceof RemotePlayer) {
+				player.onOnlineMoveAttempt( move );
+			}
+		});
+	}
+
 	return { gameState, gameStateDispatch };
 }
 
@@ -104,7 +125,7 @@ function gameStateReducer(state, action) {
 			players[currentPlayer].endTurn();
 			return {...state};
 
-		case 'startNextTurnIfAble':
+		case 'startNextTurnIfAble': {
 			validateAction(action, [{ key: 'samePlayerGoes', typeOf:  'boolean' }]);
 			// Are we able to start the next turn?  We know this if score is correct.
 			const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
@@ -119,8 +140,8 @@ function gameStateReducer(state, action) {
 			} else {
 				return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
 			}
-
-		case 'attemptMove':
+		}
+		case 'attemptMove': {
 			validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'move', 'instanceOf': Move }]);
 			if (!gameBoardState.isMovePossible(action.move)) throw `gameStateReducer dispatch failure:  'attemptMove' was called on invalid move ${action.move.toString()}`;
 			if (currentPlayer !== action.player) throw `gameStateReducer dispatch failed: 'attemptMove' was called on by player ${action.player} during opponent's turn`;
@@ -136,12 +157,12 @@ function gameStateReducer(state, action) {
 				{ type: 'updatePlayers'},
 				{ type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0 },
 			]});
-
+		}
 		case 'addMoveToHistory':
 			validateAction(action, [{ key: 'player', typeOf: 'number'}, { key: 'move', 'instanceOf': Move }]);
 			return {...state, moveHistory: moveHistory.update(action.move, action.player, action.range)};
 
-		case 'attemptMoveTakeback':
+		case 'attemptMoveTakeback': {
 			if (moveHistory.length < 1) throw new Error(`attemptMoveTakeback run with insufficient moves in history: ${moveHistory.length}`);
 			let { move: lastMove, player: lastPlayer, newMoveHistory } = moveHistory.popUpdate();
 			let revertedGameBoardState = gameBoardState.copy();
@@ -187,20 +208,18 @@ function gameStateReducer(state, action) {
 			} else {
 				throw new Error(`attemptMoveTakeback not supported for players of type ${players[(action.player + 1) % 2].constructor.name}`);
 			}
-			break;
-
+		}
 		case 'setUpGame':
 			validateAction(action, [{ key: 'settings', typeOf: 'object' }]);
 			validateSettings(action.settings);
 			return setUpGame(action.settings, state);
 
-		case 'loadGame':
+		case 'loadGame': {
 			validateAction(action, [{ key: 'moveHistory', "instanceOf": MoveHistory }]);
 			
 			// We want to deactivate the game before applying moves to avoid AI agents attempting to make moves, reactivate before last applied move.
 			const moveReducerActions = [ { type: 'deactivateGame' } ];
-			let lastRange;
-			({ move: lastMove, player: lastPlayer, range: lastRange, newMoveHistory } = action.moveHistory.popUpdate());
+			const { move: lastMove, player: lastPlayer, range: lastRange, newMoveHistory } = action.moveHistory.popUpdate();
 
 			for (let moveAction of newMoveHistory.getRawHistory()) {
 				moveReducerActions.push({
@@ -220,27 +239,26 @@ function gameStateReducer(state, action) {
 			});
 
 			return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: moveReducerActions });
-
+		}
 		case 'activateGame':
 			return {...state, 'gameActive': true};
 
 		case 'deactivateGame':
 			return {...state, 'gameActive': false};
 
-		case 'showChains':
+		case 'showChains': {
 			validateAction(action, [{ key: 'chains', 'instanceOf': Array}]);
 			const boxTags = renderBoxChainsIntoTags(action.chains);
 			return {...state, taggedGrid: taggedGrid.clearTagForAll("taggedChain").update(boxTags)};
+		}
 		case 'hideChains':
 			// set the CSS rule somehow... maybe we don't need this and it happens as part of round end/start?   Idk, tbd.
 			return {...state};
-			break;
 		
 		default:
 			throw `gameStateReducer received an invalid action type ${action.type}`;
-			break;
 	}
-};
+}
 
 function setUpGame(settings, state) {
 	// TODO: This code path does not support non-two player games.  May need change
@@ -264,6 +282,15 @@ function setUpGame(settings, state) {
 					break;
 				default:
 					throw `Incorrect settings.cpuDifficulty value: ${settings.cpuDifficulty}`;
+			}
+			break;
+		case "online":
+			if (settings.isHost) {
+				player1 = new LocalHumanPlayer(settings.playerNames[0]);
+				player2 = new RemotePlayer(settings.playerNames[1]);
+			} else {
+				player1 = new RemotePlayer(settings.playerNames[0]);
+				player2 = new LocalHumanPlayer(settings.playerNames[1]);
 			}
 			break;
 		default:
@@ -295,7 +322,7 @@ function validateSettings(settings) {
 		throw `validateSettings: invalid cpuDifficulty, only allowed types are ${ALLOWED_DIFFICULTIES}, ${settings.cpuDifficulty} was selected.`;
 	}	
 	if (!Number.isInteger(settings.boardWidth) || settings.boardWidth < 2 || settings.boardWidth > MAX_BOARD_SIZE) { 
-		throw `validateSettings: invalid boardWidth, value ${settings.boardWith} passed in`;
+		throw `validateSettings: invalid boardWidth, value ${settings.boardWidth} passed in`;
 	}
 	if (!Number.isInteger(settings.boardHeight) || settings.boardHeight < 2 || settings.boardHeight > MAX_BOARD_SIZE) {
 		throw `validateSettings: invalid boardHeight, value ${settings.boardHeight} passed in`;
@@ -312,7 +339,7 @@ function renderBoxChainsIntoTags(boxChains) {
 	for (const boxChain of boxChains) {
 		currentHue = (currentHue + hueStep) % 360;
 		for (const box of boxChain) {
-			tags.push({ column: box[0], row: box[1], values: { taggedChain: { color: `hsl(${currentHue}, 50%, 50%)` }}});;
+			tags.push({ column: box[0], row: box[1], values: { taggedChain: { color: `hsl(${currentHue}, 50%, 50%)` }}});
 		}
 	}
 	return tags;
@@ -333,4 +360,4 @@ function validateAction(action, expectations) {
 		} 
 	});
 	return;
-};
+}

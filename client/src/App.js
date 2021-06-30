@@ -5,13 +5,12 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { useGameStateStore, GameStateContext } from "./GameContext.js";
-import { SocketProvider } from "./SocketContext.js";
 import { GameBoard } from "./GameBoard.js";
 import { ControlPanel } from "./ControlPanel.js";
 
 export const DEFAULT_APP_SETTINGS = { debugMode: false, savePreviousMatchSettings: true };
 
-export function App(props) {
+export function App() {
 	const [ appSettings, setAppSettings ] = useState(DEFAULT_APP_SETTINGS);
 	const [ haveSettingsLoaded, setHaveSettingsLoaded ] = useState(false);
 	const { gameState, gameStateDispatch } = useGameStateStore(appSettings);
@@ -39,14 +38,12 @@ export function App(props) {
 	return !haveSettingsLoaded ? null : (
 		<div className="row game-div App">
 			<GameStateContext.Provider value={ contextValue }>
-				<SocketProvider>
-					<div className="col col-sm-auto">
-						<GameBoard key={ gameState.matchNumber + 1 } { ...{appSettings, setAppSettings} }/>
-					</div>
-					<div className="col col-sm-auto">
-						<ControlPanel key={ 0 } { ...{appSettings, setAppSettings} }/>
-					</div>
-				</SocketProvider>
+				<div className="col col-sm-auto">
+					<GameBoard key={ gameState.matchNumber + 1 } { ...{appSettings, setAppSettings} }/>
+				</div>
+				<div className="col col-sm-auto">
+					<ControlPanel key={ 0 } { ...{appSettings, setAppSettings} }/>
+				</div>
 			</GameStateContext.Provider>
 			
 		</div>

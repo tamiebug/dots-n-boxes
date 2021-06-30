@@ -1,5 +1,20 @@
 import { testables, TaggedChain, BasicAI, playerEvents } from './players';
-import { Move , loadTaggedChainsFromJSON, loadMoveHistoryFromJSON, SquareGrid } from './utility';
+import { Move, SquareGrid } from './utility';
+import fs from "fs";
+
+function loadTaggedChainsFromJSON(filepath) {
+  const json = JSON.parse(fs.readFileSync(filepath));
+  return json.map(chainArray => chainArray.map(chain => TaggedChain.fromJSON(chain)));
+}
+
+function loadMoveHistoryFromJSON(filepath) {
+  return JSON.parse(fs.readFileSync(filepath)).map(entry => ({
+      move: Move.fromJSON(entry.move),
+      range: entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
+      player: entry.player
+    })
+  );
+}
 
 describe('TaggedChain', () => {
   const cyclicalTaggedChainA = Object.assign(new TaggedChain, {
@@ -95,7 +110,7 @@ describe('BasicAI', () => {
   ]);
  
   const loadedMoveHistories = testSuite.map(([filename, dimensions]) => (
-    {filename, dimensions, 'moveHistory': loadMoveHistoryFromJSON(`./test_fixtures/${filename}`)}));
+    {filename, dimensions, 'moveHistory': loadMoveHistoryFromJSON(`./client/src/test_fixtures/${filename}`)}));
 
   // We want to reconstruct game states for every entry of moveHistoryEntry so that we can test every expected move set on every turn concurrently
   const testData = [];
@@ -116,7 +131,7 @@ describe('BasicAI', () => {
   test.concurrent.each(testData)('selects the correct range of moves on turn %i from %s', (index, filename, range, gameState) => {
     const basicAI = new BasicAI("BasicAI Test Friend", 0);
 
-    const aiTestingPromise = new Promise( (resolve, reject) => {
+    const aiTestingPromise = new Promise( resolve => {
       basicAI.registerCallback( (call) => {
         if (call.type !== playerEvents.SUBMIT_MOVE) return;
         expect(call.range).toBeSameSetOfMoves(range);
@@ -140,7 +155,6 @@ expect.extend({toBeSameSetOfMoves(received, arrayOfMoves) {
   }
 
   if (received.length !== arrayOfMoves.length) {
-    debugger;
     return {
       pass: false,
       message: () => `Expected received length of possible moves, ${received.length}, to equal length of arrayOfMoves ${arrayOfMoves.length}`,
@@ -206,7 +220,6 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
   }
 
   if (received.length !== taggedChainList.length) {
-    debugger;
     return {
       pass: false,
       message: () => `Expected received length, ${received.length}, to equal taggedChainList length ${taggedChainList.length}`
@@ -241,7 +254,6 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
   } else {
     const receivedCopyLength = receivedCopy.filter(e => e !== undefined).length;
     const taggedChainListCopyLength = taggedChainListCopy.filter(e => e!== undefined).length;
-    debugger;
     return {
       pass : false,
       message : () => `Expected value and taggedChainList to have the same TaggedChains.  However, 
@@ -251,8 +263,8 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
 }});
 
 describe('groupMovesIntoTaggedChains', () => {
-  const testTaggedChains = loadTaggedChainsFromJSON('./test_fixtures/TaggedChains1.json');
-  const testMoveHistoryJSON = require("./test_fixtures/MoveHistory1.json");
+  const testTaggedChains = loadTaggedChainsFromJSON('./client/src/test_fixtures/TaggedChains1.json');
+  const testMoveHistoryJSON = JSON.parse(fs.readFileSync("./client/src/test_fixtures/MoveHistory1.json"));
   let gameState = new SquareGrid(5, 5);
  
   const testSquareGrids = testMoveHistoryJSON.map((item) => {
@@ -268,10 +280,10 @@ describe('groupMovesIntoTaggedChains', () => {
     )).toBeEquivalentTaggedChainListTo(taggedChains);
  });
 
-  const testTaggedChainsJSON2 = require('./test_fixtures/TaggedChains3.json');
+  const testTaggedChainsJSON2 = JSON.parse(fs.readFileSync('./client/src/test_fixtures/TaggedChains3.json'));
   const testTaggedChains2 = testTaggedChainsJSON2.map(chainJSON => TaggedChain.fromJSON(chainJSON));
 
-  const testGameState2 = SquareGrid.fromJSON(require('./test_fixtures/GameState3.json'));
+  const testGameState2 = SquareGrid.fromJSON(JSON.parse(fs.readFileSync('client/src/test_fixtures/GameState3.json')));
 
   test(' when applied to GameState3.json returns the chains in TaggedChains3.json', () => {
     expect(testables.groupMovesIntoTaggedChains(

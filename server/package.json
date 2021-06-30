@@ -1,0 +1,24 @@
+{
+  "name": "dots-n-boxes-server",
+  "version": "0.0.1",
+  "description": "node.js server app for dots-n-boxes multiplayer",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint ./ --ext .js",
+    "lint-fix": "eslint ./ --ext .js --fix",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PentaHiggs/dots-n-boxes.git",
+    "directory": "server"
+  },
+  "dependencies": {
+    "socket.io": "^3.0.3",
+    "uuid": "^8.3.2",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.1.2"
+  }
+}

@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 
-export function GameMenu(props) {
-  const [ formData, setFormData ] = useState({...props.defaultFormSettings});
+export function GameMenu({ defaultFormSettings, startingItemName, name, menuItems }) {
+  const [ formData, setFormData ] = useState({...defaultFormSettings});
 
-  const [ currentMenuPage, setCurrentMenuPage ] = useState(props.startingItemName);
+  const [ currentMenuPage, setCurrentMenuPage ] = useState(startingItemName);
   const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
   const [ isUndoAction, setIsUndoAction ] = useState(false);
 
@@ -22,10 +22,9 @@ export function GameMenu(props) {
         setIsUndoAction(false);
       }
     },
-    menuName: props.name,
+    menuName: name,
     formData: formData,
     setFormData: data => setFormData(data),
-    currentPage: currentMenuPage,
   };
 
   const classNames = `gameMenuItem${isUndoAction ? "-reverse" : ""}`;
@@ -41,21 +40,15 @@ export function GameMenu(props) {
             <div className="gameMenuModalHeader">
               <h2> { currentMenuPage } </h2>
             </div>
-            { props.items(context)[currentMenuPage ] }
+            <div className="gameMenuModalBody">
+              { menuItems[currentMenuPage](context) }
+            </div>
             <div className="gameMenuModalFooter">
               { previousMenuPages.length > 0 && <button type="button" onClick={() => context.linkTo(undefined, true)}> Previous </button>}
             </div>
           </div>
         </CSSTransition>
       </TransitionGroup>
-    </div>
-  );
-}
-
-export function GameMenuItem(props) {
-  return (
-    <div className="gameMenuModalBody">
-      { props.children }
     </div>
   );
 }
