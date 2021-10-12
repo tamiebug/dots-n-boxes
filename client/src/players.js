@@ -262,10 +262,10 @@ export class Player {
   }
 
   addScore(num) {
-		// addScore returns a new modified Player object
-		const newPlayer = new this.constructor(this._name);
+    // addScore returns a new modified Player object
+    const newPlayer = new this.constructor(this._name);
     newPlayer.score = this.score + num;
-		return newPlayer;
+    return newPlayer;
   }
 
   getNameInitials() {
@@ -323,7 +323,7 @@ export class RandomPlayer extends Player {
   }
 
   generateNextMove() { 
-		setTimeout(() => this.performMove(this._currentState.allPossibleMoves()), this._moveDelay);
+    setTimeout(() => this.performMove(this._currentState.allPossibleMoves()), this._moveDelay);
   }
 }
 
@@ -498,10 +498,10 @@ export class TestCasePlayer extends Player {
   }
 
   addScore(num) {
-		// addScore returns a modified Player object
-		const newPlayer = new this.constructor(this._name, this._JSONWindow);
+    // addScore returns a modified Player object
+    const newPlayer = new this.constructor(this._name, this._JSONWindow);
     newPlayer.score = this.score + num;
-		return newPlayer;
+    return newPlayer;
   }
 }
 

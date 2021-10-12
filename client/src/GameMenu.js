@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
-
 export function GameMenu({ defaultFormSettings, startingItemName, name, menuItems }) {
   const [ formData, setFormData ] = useState({...defaultFormSettings});
 

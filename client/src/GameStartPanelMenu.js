@@ -135,7 +135,7 @@ export function GameStartPanelMenu({ previousSettings, setGameSettingsAndKillMen
     
     "AI Difficulty": ({ linkTo, formData, setFormData }) => { 
       function onSubmit( event ) {
-				event.preventDefault();
+        event.preventDefault();
         linkTo("Choose Player Name");
       }
 

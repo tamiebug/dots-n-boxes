@@ -1,9 +1,9 @@
 export const mouseTracker = {
-	// We need to know of the current mouse state for some functionalities
-	mouseButtonDown : false,
-	onUp() { this.mouseButtonDown = false; },
-	onDown() { this.mouseButtonDown = true; },
-	isMouseButtonDown() { return this.mouseButtonDown; }
+  // We need to know of the current mouse state for some functionalities
+  mouseButtonDown : false,
+  onUp() { this.mouseButtonDown = false; },
+  onDown() { this.mouseButtonDown = true; },
+  isMouseButtonDown() { return this.mouseButtonDown; }
 };
 
 export class SquareGrid {
@@ -306,8 +306,8 @@ export class Move {
     }
   }
 
-	toString() {
-		return "(" + this.r + ", " + this.c + ", " + (this.isHorizontal()? "h)" : "v)");
+  toString() {
+    return "(" + this.r + ", " + this.c + ", " + (this.isHorizontal()? "h)" : "v)");
   }
   
   static fromJSON(JSON) {

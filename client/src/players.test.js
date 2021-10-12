@@ -9,11 +9,10 @@ function loadTaggedChainsFromJSON(filepath) {
 
 function loadMoveHistoryFromJSON(filepath) {
   return JSON.parse(fs.readFileSync(filepath)).map(entry => ({
-      move: Move.fromJSON(entry.move),
-      range: entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
-      player: entry.player
-    })
-  );
+    move: Move.fromJSON(entry.move),
+    range: entry.range.map(rangeEntry => Move.fromJSON(rangeEntry)),
+    player: entry.player
+  }));
 }
 
 describe('TaggedChain', () => {
