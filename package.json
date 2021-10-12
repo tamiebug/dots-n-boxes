@@ -8,7 +8,7 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest --verbose",
     "test:client": "node --experimental-vm-modules node_modules/.bin/jest client",
     "test:server": "node --experimental-vm-modules node_modules/.bin/jest server",
-    "start": "(cd ./client && npm start &> ../clientWebpackDev.log) & (cd ../server && npm start && ../nodeServer.log)",
+    "start": "(cd ./client && (npm start > ../clientWebpackDev.log 2>&1 &)) ; (cd ./server && (npm start > ../nodeServer.log 2>&1 &))",
     "start:client": "cd ./client && npm start",
     "start:server": "cd ./server && npm start",
     "build": "(cd ./client && npm build)",
