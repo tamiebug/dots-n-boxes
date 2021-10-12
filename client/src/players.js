@@ -336,12 +336,10 @@ export class RemotePlayer extends Player {
   constructor(name) {
     super(name);
     this.outgoingMoveCallback = null;
-    this.lastLocalMove = null;
   }
 
   onLocalMoveAttempt( move ) {
-    console.log(`REMOTE received localMoveAttempt ${JSON.stringify(move)}`);
-    this.lastLocalMove = move;
+    this.outgoingMoveCallback( move );
   }
 
   registerOutgoingMoveCallback( cb ) {
@@ -352,14 +350,7 @@ export class RemotePlayer extends Player {
     if (this._myTurn) this.performMove( move );
   }
 
-  generateNextMove() {
-    console.log("REMOTE generateNextMove");
-    if (this.lastLocalMove) {
-      console.log(`generateNextMove generated ${this.lastLocalMove}`);
-      this.outgoingMoveCallback( this.lastLocalMove );
-    }
-    this.lastLocalMove = null;
-  }
+  generateNextMove() { return; }
 }
 
 export class WeakAI extends Player {
