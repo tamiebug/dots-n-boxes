@@ -42,6 +42,7 @@ export function ChooseOnlineNameComponent({ linkTo, formData, setFormData }) {
     reserveName(currentName, response => {
       if (response.available || response.pairAlreadyExists) {
         setNameValid(true);
+        inputRef.current.setCustomValidity("");
       } else {
         inputRef.current.setCustomValidity(`${currentName} is not available`);
         inputRef.current.reportValidity();
