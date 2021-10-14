@@ -198,7 +198,6 @@ export class Player {
     this._currentState = null;
     this._myTurn = false;
     this._moveDelay = moveDelay;
-    this.score = 0;
   }
   
   startTurn() {
@@ -259,13 +258,6 @@ export class Player {
       doMove(move_s, [move_s]);
     } 
     // performMove END
-  }
-
-  addScore(num) {
-    // addScore returns a new modified Player object
-    const newPlayer = new this.constructor(this._name);
-    newPlayer.score = this.score + num;
-    return newPlayer;
   }
 
   getNameInitials() {
@@ -495,13 +487,6 @@ export class TestCasePlayer extends Player {
   generateNextMove() {
     // Empty, no calculations done
     return;
-  }
-
-  addScore(num) {
-    // addScore returns a modified Player object
-    const newPlayer = new this.constructor(this._name, this._JSONWindow);
-    newPlayer.score = this.score + num;
-    return newPlayer;
   }
 }
 

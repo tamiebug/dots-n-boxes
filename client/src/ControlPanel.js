@@ -13,8 +13,7 @@ export function ControlPanel(props) {
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
   const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
 
-  const { players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
-  const [ player1, player2 ] = players;
+  const { players, playerScores, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
   
   useEffect(() => {
     if (props.appSettings.savePreviousMatchSettings === true) {
@@ -77,10 +76,10 @@ export function ControlPanel(props) {
       />}
       <div className="row">
         <div className="col" id="playerNameDisplay">
-          <h1 className="player-1">{player1._name}[{player1.score}]</h1>
+          <h1 className="player-1">{ players[0]._name }[{ playerScores[0] }]</h1>
           <h1>vs</h1>
-          <h1 className="player-2">{player2._name}[{player2.score}]</h1>
-          <h2 className="who-goes">{players[currentPlayer]._name} goes</h2>
+          <h1 className="player-2">{ players[1]._name }[{ playerScores[1] }]</h1>
+          <h2 className="who-goes">{ players[currentPlayer]._name } goes</h2>
           <div className="row">
             <PanelButton
               onMouseClick={() => setShowAppSettingsMenu(true)}

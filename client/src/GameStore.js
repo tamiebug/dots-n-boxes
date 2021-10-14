@@ -15,7 +15,7 @@ export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 const initialGameStoreState = {
   'matchNumber': 0,           // int
   'players': [],              // [ Player ]
-  'playerActionCallbacks': [],// [ function ]
+  'playerScores': [],         // [ int ]
   'currentPlayer': null,      // int
   'numberMovesCompleted': -1, // int
   'moveHistory': null,        // MoveHistory
@@ -30,7 +30,7 @@ export const useGameStore = () => useStore( gameStore );
 
 export function useGameStateStore(appSettings) {
 	const [ gameState, gameStateDispatch ] = useStore( gameStore ); 
-  const { players, gameBoardState } = gameState;
+  const { players, playerScores, gameBoardState } = gameState;
   const { registerOnlineMoveCallback, attemptOnlineMove } = useContext(SocketContext);
 
   useEffect(() => {
@@ -51,11 +51,11 @@ export function useGameStateStore(appSettings) {
   useEffect(() => {
     if (gameBoardState == null) return;
     const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
-    const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
+    const pointsScored = playerScores.reduce((totalScore, playerScore) => playerScore + totalScore, 0);
     
     if (pointsScored == maxPointsPossible) {
-      const gameIsTied = players[0].score == players[1].score;
-      const playerOneWon = players[0].score > players[1].score;
+      const gameIsTied = playerScores[0] == playerScores[1];
+      const playerOneWon = playerScores[0] > playerScores[1];
       if ( gameIsTied ) {
         window.alert(`The game was a tie!`);
       } else if ( playerOneWon ) {
@@ -79,7 +79,7 @@ export function useGameStateStore(appSettings) {
 }
 
 function gameStateReducer(state, action) {
-  const { matchNumber, players, playerActionCallbacks, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, moveHistory, gameActive } = state;
+  const { matchNumber, players, playerScores, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, moveHistory, gameActive } = state;
   // console.log(`action: ${Object.entries(action)}`);
   switch(action.type) {
     case '__runBatchedActions':
@@ -92,16 +92,13 @@ function gameStateReducer(state, action) {
     case 'registerPlayerCallback':
       validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'callback', typeOf: 'function' }]);
       players[action.player].registerCallback(action.callback);
-      return {...state,
-        playerActionCallbacks: playerActionCallbacks.map((callback, _index) => { return (_index == action.player) ? action.callback : callback; })};  
+      return {...state}
 
     case 'addScore':
       validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'points', typeOf: 'number' }]);
-      if (action.player > players.length || action.player < 0) throw `gameStateReducer dispatch failure: 'addScore' called on player number ${action.player}`;
+      if (action.player > playerScores.length || action.player < 0) throw `gameStateReducer dispatch failure: 'addScore' called on player number ${action.player}`;
       if (action.points == 0) return {...state};
-      return {...state, players: players.map((_player, index) => {
-        return (index == action.player) ? _player.addScore(action.points).registerCallback(playerActionCallbacks[action.player]) : _player;
-      })};
+      return {...state, playerScores: playerScores.map( (score, index) => index==action.player ? (score + action.points) : score)};
 
     case 'updatePlayers':
       players.forEach((player) => player.updatePlayerState(gameBoardState));
@@ -131,7 +128,7 @@ function gameStateReducer(state, action) {
       validateAction(action, [{ key: 'samePlayerGoes', typeOf:  'boolean' }]);
       // Are we able to start the next turn?  We know this if score is correct.
       const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
-      const pointsScored = players.reduce((totalScore, player) => player.score + totalScore, 0);
+      const pointsScored = playerScores.reduce((totalScore, playerScore) => playerScore + totalScore, 0);
     
       if (pointsScored == maxPointsPossible) {
         // TODO: potentially change some other state variable indicating winner in future?
@@ -301,7 +298,7 @@ function setUpGame(settings, state) {
 
   return {...state,
     'players': [player1, player2],
-    'playerActionCallbacks': [() => {}, () => {}],
+    'playerScores': [0, 0],
     'currentPlayer': 0,
     'numberMovesCompleted': state.numberMovesCompleted + 1,
     'moveHistory': new MoveHistory(),
