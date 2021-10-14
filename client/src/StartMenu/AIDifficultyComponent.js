@@ -1,5 +1,5 @@
 import React from "react";
-import { ALLOWED_DIFFICULTIES } from "../GameContext";
+import { ALLOWED_DIFFICULTIES } from "../GameStore";
 import { createSelect } from "./createSelect";
 
 function AIDifficultySelectElement({ formData, setFormData, previousSettings }) {

@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Move , mouseTracker } from "./utility.js";
-import { GameStateContext } from "./GameContext.js";
+import { useGameStore } from "./GameStore.js";
 
 const mouseEvents = Object.freeze({
   DOWN:   Symbol("down"),
@@ -12,7 +12,7 @@ const mouseEvents = Object.freeze({
 export function GameBoard() {
   const [selectedCoordinate, setSelectedCoordinate] = useState(null);
   const [highlightedPotentialMove, setHighlightedPotentialMove] = useState(null);
-  const { gameState } = useContext(GameStateContext);
+  const [ gameState ] = useGameStore();
   const { players, gameBoardState } = gameState;
 
   if (gameState.gameBoardState == null)
@@ -133,7 +133,7 @@ export function GameBoard() {
   return render();
 }
 function GameBoardRow(props) {
-  const { gameState } = useContext(GameStateContext);
+  const [ gameState ] = useGameStore();
   const { gameBoardState } = gameState;
 
   let renderedSquares = [];
@@ -160,7 +160,7 @@ function GameBoardRow(props) {
   );
 }
 function GameBoardSquare(props) {
-  const { gameState } = useContext(GameStateContext);
+  const [ gameState ] = useGameStore();
   const { gameBoardState, taggedGrid } = gameState;
 
   let squareStyle = {};

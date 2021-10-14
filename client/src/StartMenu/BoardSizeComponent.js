@@ -1,5 +1,5 @@
 import React from "react";
-import { MAX_BOARD_SIZE, MIN_BOARD_SIZE } from "../GameContext";
+import { MAX_BOARD_SIZE, MIN_BOARD_SIZE } from "../GameStore";
 import { createSelect } from "./createSelect";
 
 function BoardSizeSelectElement ({ formData, setFormData, previousSettings }) {

@@ -1,6 +1,6 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { AppSettingsMenu } from "./AppSettingsMenu.js";
-import { GameStateContext } from "./GameContext.js";
+import { useGameStore } from "./GameStore.js";
 import { GameStartPanelMenu } from "./GameStartPanelMenu.js";
 import { playerEvents } from "./players.js";
 import { Move , printObjectToJSON, MoveHistory } from "./utility.js";
@@ -8,7 +8,7 @@ import { Move , printObjectToJSON, MoveHistory } from "./utility.js";
 const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
 export function ControlPanel(props) {
-  const { gameState, gameStateDispatch } = useContext(GameStateContext);
+  const [ gameState, gameStateDispatch ] = useGameStore();
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
   const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);

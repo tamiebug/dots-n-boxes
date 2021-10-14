@@ -4,7 +4,7 @@ import "./App.css";
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { useGameStateStore, GameStateContext } from "./GameContext.js";
+import { useGameStateStore } from "./GameStore.js";
 import { GameBoard } from "./GameBoard.js";
 import { ControlPanel } from "./ControlPanel.js";
 
@@ -13,7 +13,7 @@ export const DEFAULT_APP_SETTINGS = { debugMode: false, savePreviousMatchSetting
 export function App() {
   const [ appSettings, setAppSettings ] = useState(DEFAULT_APP_SETTINGS);
   const [ haveSettingsLoaded, setHaveSettingsLoaded ] = useState(false);
-  const { gameState, gameStateDispatch } = useGameStateStore(appSettings);
+  const { gameState } = useGameStateStore(appSettings);
 
   useEffect(() => {
     const localSettings = JSON.parse(window.localStorage.getItem('App Settings'));
@@ -30,22 +30,14 @@ export function App() {
     window.localStorage.setItem('App Settings', stringifiedSettings);
   }, [ appSettings ]);
 
-  /* Precaution to avoid unneeded renders in child components on parent component rerender */
-  const contextValue = useMemo(() => {
-    return { gameState, gameStateDispatch };
-  }, [ gameState, gameStateDispatch ]);
-
   return !haveSettingsLoaded ? null : (
     <div className="row game-div App">
-      <GameStateContext.Provider value={ contextValue }>
-        <div className="col col-sm-auto">
-          <GameBoard key={ gameState.matchNumber + 1 } { ...{appSettings, setAppSettings} }/>
-        </div>
-        <div className="col col-sm-auto">
-          <ControlPanel key={ 0 } { ...{appSettings, setAppSettings} }/>
-        </div>
-      </GameStateContext.Provider>
-      
+      <div className="col col-sm-auto">
+        <GameBoard key={ gameState.matchNumber + 1 } { ...{appSettings, setAppSettings} }/>
+      </div>
+      <div className="col col-sm-auto">
+        <ControlPanel key={ 0 } { ...{appSettings, setAppSettings} }/>
+      </div> 
     </div>
   );
 }

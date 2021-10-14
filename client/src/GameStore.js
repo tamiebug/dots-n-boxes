@@ -1,8 +1,9 @@
-import { createContext, useReducer, useEffect, useContext } from "react";
-import { Move, MoveHistory, SquareGrid , TaggedGrid, printObjectToJSON } from "./utility.js";
-import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI, RemotePlayer } from "./players.js";
-import { SocketContext } from "./SocketContext.js";
-
+import { useEffect, useContext } from "react";
+import { createStore } from "./createStore";
+import { useStore } from "./useStore";
+import { Move, MoveHistory, SquareGrid, TaggedGrid, printObjectToJSON } from "./utility";
+import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI, RemotePlayer } from "./players";
+import { SocketContext } from "./SocketContext";
 
 // Useful constants extracted here for easy changing
 export const NUMBER_PLAYERS = 2;
@@ -11,9 +12,7 @@ export const MIN_BOARD_SIZE = 3;
 export const ALLOWED_GAME_TYPES = ['CPU', 'local', 'online'];
 export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 
-export const GameStateContext = createContext();
-
-export const initialGameState = {
+const initialGameStoreState = {
   'matchNumber': 0,           // int
   'players': [],              // [ Player ]
   'playerActionCallbacks': [],// [ function ]
@@ -26,8 +25,11 @@ export const initialGameState = {
   'gameSettings': {}          // object
 };
 
+export const gameStore = createStore( gameStateReducer, () => initialGameStoreState );
+export const useGameStore = () => useStore( gameStore );
+
 export function useGameStateStore(appSettings) {
-  const [ gameState, gameStateDispatch ] = useReducer(gameStateReducer, initialGameState);
+	const [ gameState, gameStateDispatch ] = useStore( gameStore ); 
   const { players, gameBoardState } = gameState;
   const { registerOnlineMoveCallback, attemptOnlineMove } = useContext(SocketContext);
 

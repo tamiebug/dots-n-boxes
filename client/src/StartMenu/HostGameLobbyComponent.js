@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "../GameContext.js";
+import { MIN_BOARD_SIZE, MAX_BOARD_SIZE } from "../GameStore.js";
 import { SocketContext } from "../SocketContext.js";
 import { createSelect } from "./createSelect";
 
