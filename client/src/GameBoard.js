@@ -12,8 +12,8 @@ const mouseEvents = Object.freeze({
 export function GameBoard() {
   const [selectedCoordinate, setSelectedCoordinate] = useState(null);
   const [highlightedPotentialMove, setHighlightedPotentialMove] = useState(null);
-  const [ gameState ] = useGameStore();
-  const { players, gameBoardState } = gameState;
+  const [ gameState , gameDispatch ] = useGameStore();
+  const { gameBoardState } = gameState;
 
   if (gameState.gameBoardState == null)
     return null;
@@ -95,10 +95,8 @@ export function GameBoard() {
       isHorizontalLine(selectedCoordinate, { row, column }) ? "h" : "v"
     );
 
-    // TODO:  Potentially move this into the reducer, 'onLocalMoveAttempt' action maybe?
     if (gameBoardState.isMovePossible(move)) {
-      players.forEach( player => player.onLocalMoveAttempt(move));
-      //players[currentPlayer].onLocalMoveAttempt(move);
+      gameDispatch({ type: 'localMoveAttempt', move });
     }
   }
 

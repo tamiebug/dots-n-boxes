@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { hot } from "react-hot-loader";
 import "./App.css";
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { useGameStateStore } from "./GameStore.js";
+import { useGameStore } from "./GameStore.js";
 import { GameBoard } from "./GameBoard.js";
 import { ControlPanel } from "./ControlPanel.js";
 
@@ -13,7 +13,7 @@ export const DEFAULT_APP_SETTINGS = { debugMode: false, savePreviousMatchSetting
 export function App() {
   const [ appSettings, setAppSettings ] = useState(DEFAULT_APP_SETTINGS);
   const [ haveSettingsLoaded, setHaveSettingsLoaded ] = useState(false);
-  const { gameState } = useGameStateStore(appSettings);
+  const [ gameState ] = useGameStore();
 
   useEffect(() => {
     const localSettings = JSON.parse(window.localStorage.getItem('App Settings'));

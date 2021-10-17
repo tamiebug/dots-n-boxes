@@ -1,9 +1,9 @@
-import { useEffect, useContext } from "react";
 import { createStore } from "./createStore";
 import { useStore } from "./useStore";
-import { Move, MoveHistory, SquareGrid, TaggedGrid, printObjectToJSON } from "./utility";
-import { LocalHumanPlayer, BasicAI, RandomPlayer, WeakAI, RemotePlayer } from "./players";
-import { SocketContext } from "./SocketContext";
+import { GameEngine } from "./GameEngine";
+import { Move, MoveHistory, SquareGrid, TaggedGrid } from "./utility";
+import { playerTypes, Player } from "./player";
+import { CPUTypes } from "./CPU";
 
 // Useful constants extracted here for easy changing
 export const NUMBER_PLAYERS = 2;
@@ -12,75 +12,32 @@ export const MIN_BOARD_SIZE = 3;
 export const ALLOWED_GAME_TYPES = ['CPU', 'local', 'online'];
 export const ALLOWED_DIFFICULTIES = ['random', 'weak', 'basic'];
 
+export const appStates = Object.freeze({
+  PRE_MATCH:    Symbol("pre-game"),
+  MATCH:        Symbol("match"),
+  PAUSED:       Symbol("pause"),
+  DISCONNECTED: Symbol("disconnected"),
+  POST_GAME:    Symbol("post-game"),
+});
+
 const initialGameStoreState = {
   'matchNumber': 0,           // int
-  'players': [],              // [ Player ]
-  'playerScores': [],         // [ int ]
+  'players': [],                      // Player
   'currentPlayer': null,      // int
-  'numberMovesCompleted': -1, // int
   'moveHistory': null,        // MoveHistory
   'gameBoardState': null,     // SquareGrid
   'taggedGrid': null,         // TaggedGrid
-  'gameActive': false,        // boolean
-  'gameSettings': {}          // object
+  'appState': appStates.PRE_MATCH,    // appState
+  'gameSettings': {},                 // object
+  'appSettings' : {},                 // object
 };
 
 export const gameStore = createStore( gameStateReducer, () => initialGameStoreState );
 export const useGameStore = () => useStore( gameStore );
-
-export function useGameStateStore(appSettings) {
-	const [ gameState, gameStateDispatch ] = useStore( gameStore ); 
-  const { players, playerScores, gameBoardState } = gameState;
-  const { registerOnlineMoveCallback, attemptOnlineMove } = useContext(SocketContext);
-
-  useEffect(() => {
-    if (gameState.numberMovesCompleted > -1) {
-      gameState.players[gameState.currentPlayer].startTurn();
-    }
-  }, [gameState.numberMovesCompleted]);
-
-  useEffect(() => {
-    registerOnlineMoveCallback( incomingMoveCallback );
-    players.forEach( player => {
-      if (player instanceof RemotePlayer) {
-        player.registerOutgoingMoveCallback(attemptOnlineMove);
-      }
-    });
-  }, [ players ]);
-
-  useEffect(() => {
-    if (gameBoardState == null) return;
-    const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
-    const pointsScored = playerScores.reduce((totalScore, playerScore) => playerScore + totalScore, 0);
-    
-    if (pointsScored == maxPointsPossible) {
-      const gameIsTied = playerScores[0] == playerScores[1];
-      const playerOneWon = playerScores[0] > playerScores[1];
-      if ( gameIsTied ) {
-        window.alert(`The game was a tie!`);
-      } else if ( playerOneWon ) {
-        window.alert(`${players[0]._name} has won!`);
-      } else /* player two won */ {
-        window.alert(`${players[1]._name} has won!`);
-      }
-      if (appSettings.debugMode && window.confirm(`Would you like to show JSON of last match's moves?`)) printObjectToJSON(gameState.moveHistory);
-    }
-  }, [ gameState.gameActive ]);
-
-  function incomingMoveCallback( move ) {
-    players.forEach( player => {
-      if (player instanceof RemotePlayer) {
-        player.onOnlineMoveAttempt( move );
-      }
-    });
-  }
-
-  return { gameState, gameStateDispatch };
-}
+const gameEngine = new GameEngine( gameStore );  // eslint-disable-line no-unused-vars
 
 function gameStateReducer(state, action) {
-  const { matchNumber, players, playerScores, currentPlayer, gameBoardState, taggedGrid , numberMovesCompleted, moveHistory, gameActive } = state;
-  // console.log(`action: ${Object.entries(action)}`);
+  const { matchNumber, players, currentPlayer, gameBoardState, taggedGrid , moveHistory, appState } = state;
   switch(action.type) {
     case '__runBatchedActions':
       validateAction(action, [{ key: 'batchedActions', 'instanceOf': Array }]);
@@ -89,20 +46,11 @@ function gameStateReducer(state, action) {
     case 'incrementMatchNumber':
       return {...state, 'matchNumber': matchNumber + 1};
 
-    case 'registerPlayerCallback':
-      validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'callback', typeOf: 'function' }]);
-      players[action.player].registerCallback(action.callback);
-      return {...state}
-
     case 'addScore':
       validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'points', typeOf: 'number' }]);
-      if (action.player > playerScores.length || action.player < 0) throw `gameStateReducer dispatch failure: 'addScore' called on player number ${action.player}`;
+    if (action.player > players.length || action.player < 0) throw `gameStateReducer dispatch failure: 'addScore' called on player number ${action.player}`;
       if (action.points == 0) return {...state};
-      return {...state, playerScores: playerScores.map( (score, index) => index==action.player ? (score + action.points) : score)};
-
-    case 'updatePlayers':
-      players.forEach((player) => player.updatePlayerState(gameBoardState));
-      return {...state};
+    return {...state, players: players.map( (player, index) => index==action.player ? player.addScore( action.points ) : player )};
 
     case 'updateOwnershipGrid':
       validateAction(action, [{ key: 'completedBoxes', 'instanceOf': Array }, { key: 'initials', typeOf: 'string' }]);
@@ -120,43 +68,45 @@ function gameStateReducer(state, action) {
       validateAction(action, [{ key: 'move', 'instanceOf': Move }]);
       return {...state, gameBoardState: gameBoardState.update(action.move)};
 
-    case 'endCurrentTurn':
-      players[currentPlayer].endTurn();
-      return {...state};
-
     case 'startNextTurnIfAble': {
       validateAction(action, [{ key: 'samePlayerGoes', typeOf:  'boolean' }]);
-      // Are we able to start the next turn?  We know this if score is correct.
-      const maxPointsPossible = (gameBoardState.nRows - 1) * (gameBoardState.nColumns - 1);
-      const pointsScored = playerScores.reduce((totalScore, playerScore) => playerScore + totalScore, 0);
-    
-      if (pointsScored == maxPointsPossible) {
-        // TODO: potentially change some other state variable indicating winner in future?
-        return gameStateReducer({...state}, { type: 'deactivateGame' });
-      } else if (!gameActive) {
-        // don't augment numberMovesCompleted as to not trigger player startTurn(s).  Triggering startTurn(s) is it's only real purpose.
         return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS };
+  }
+
+  case 'localMoveAttempt': {
+    validateAction( action, [{ key: 'move', 'instanceOf': Move }]);
+    if ( players[currentPlayer].isLocal() ) {
+      return gameStateReducer({...state}, { type: 'attemptMove', move: action.move, player: currentPlayer });
       } else {
-        return {...state, currentPlayer: (currentPlayer + (action.samePlayerGoes ? 0 : 1)) % NUMBER_PLAYERS , numberMovesCompleted: numberMovesCompleted  + 1};
+      return {...state};
+    }
+  }
+
+  case 'onlineMoveAttempt': {
+    validateAction( action, [{ key: 'move', 'instanceOf': Move }]);
+    if ( players[currentPlayer].isRemote() ) {
+      return gameStateReducer({...state}, { type: 'attemptMove', move: action.move, player: currentPlayer });
+    } else {
+      // ignore the move, it's not the remote player's turn.
+      return {...state};
       }
     }
+
     case 'attemptMove': {
-      validateAction(action, [{ key: 'player', typeOf: 'number' }, { key: 'move', 'instanceOf': Move }]);
+    validateAction(action, [{ key: 'move', 'instanceOf': Move }]);
+    if (appState !== appStates.MATCH) return {...state};
       if (!gameBoardState.isMovePossible(action.move)) throw `gameStateReducer dispatch failure:  'attemptMove' was called on invalid move ${action.move.toString()}`;
-      if (currentPlayer !== action.player) throw `gameStateReducer dispatch failed: 'attemptMove' was called on by player ${action.player} during opponent's turn`;
 
       const boxesCompletedByMove = gameBoardState.boxesCompletedBy(action.move);
-
       return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: [
-        { type: 'addMoveToHistory', move: action.move, range: action.range, player: action.player },
+      { type: 'addMoveToHistory', move: action.move, range: action.range, player: currentPlayer },
         { type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByMove, initials: players[currentPlayer].getNameInitials()},
         { type: 'updateBoardState', move: action.move },
         { type: 'addScore', player: currentPlayer, points: boxesCompletedByMove.length },
-        { type: 'endCurrentTurn' },
-        { type: 'updatePlayers'},
         { type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0 },
       ]});
     }
+
     case 'addMoveToHistory':
       validateAction(action, [{ key: 'player', typeOf: 'number'}, { key: 'move', 'instanceOf': Move }]);
       return {...state, moveHistory: moveHistory.update(action.move, action.player, action.range)};
@@ -166,7 +116,7 @@ function gameStateReducer(state, action) {
       let { move: lastMove, player: lastPlayer, newMoveHistory } = moveHistory.popUpdate();
       let revertedGameBoardState = gameBoardState.copy();
 
-      if (players[lastPlayer] instanceof LocalHumanPlayer) {
+    if ( players[lastPlayer].isLocal() ) {
         revertedGameBoardState = revertedGameBoardState.remove(lastMove);
         const boxesCompletedByMove = revertedGameBoardState.boxesCompletedBy(lastMove);
 
@@ -174,17 +124,15 @@ function gameStateReducer(state, action) {
           { type: '__runBatchedActions', batchedActions: [
             { type: 'updateOwnershipGrid', completedBoxes: boxesCompletedByMove, initials: ""},
             { type: 'addScore', player: lastPlayer, points: boxesCompletedByMove.length * -1 },
-            { type: 'endCurrentTurn' },
-            { type: 'updatePlayers' },
             { type: 'startNextTurnIfAble', samePlayerGoes: boxesCompletedByMove.length > 0},
           ]}
         );
-      } else if ([RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU)) {
+    } else if ( players[lastPlayer].isCPU() ){
         let boxesCompletedByLastMove = 0;
         const reducerActions = [];
 
         // Undo all of the AI's moves that went after your move.
-        while ( [RandomPlayer, WeakAI, BasicAI].some(CPU => players[lastPlayer] instanceof CPU) ) {
+      while ( players[lastPlayer].isCPU() ) {
           revertedGameBoardState = revertedGameBoardState.remove(lastMove);
           boxesCompletedByLastMove = revertedGameBoardState.boxesCompletedBy(lastMove);
 
@@ -198,8 +146,6 @@ function gameStateReducer(state, action) {
         revertedGameBoardState = revertedGameBoardState.remove(lastMove);
         boxesCompletedByLastMove = revertedGameBoardState.boxesCompletedBy(lastMove);
         
-        reducerActions.push({ type: 'endCurrentTurn'});
-        reducerActions.push({ type: 'updatePlayers' });
         reducerActions.push({ type: 'startNextTurnIfAble', samePlayerGoes: true });
 
         return gameStateReducer({...state, moveHistory: newMoveHistory, gameBoardState: revertedGameBoardState},
@@ -208,10 +154,11 @@ function gameStateReducer(state, action) {
         throw new Error(`attemptMoveTakeback not supported for players of type ${players[(action.player + 1) % 2].constructor.name}`);
       }
     }
+
     case 'setUpGame':
-      validateAction(action, [{ key: 'settings', typeOf: 'object' }]);
+    validateAction(action, [{ key: 'settings', typeOf: 'object' }, { key: 'appSettings', typeOf: 'object' }]);
       validateSettings(action.settings);
-      return setUpGame(action.settings, state);
+    return setUpGame(action.settings, state, action.appSettings);
 
     case 'loadGame': {
       validateAction(action, [{ key: 'moveHistory', "instanceOf": MoveHistory }]);
@@ -240,10 +187,11 @@ function gameStateReducer(state, action) {
       return gameStateReducer({...state}, { type: '__runBatchedActions', batchedActions: moveReducerActions });
     }
     case 'activateGame':
-      return {...state, 'gameActive': true};
+    return {...state, appState: appStates.MATCH };
 
     case 'deactivateGame':
-      return {...state, 'gameActive': false};
+    console.log("GAME DEACTIVATED");
+    return {...state, appState: appStates.PAUSED };
 
     case 'showChains': {
       validateAction(action, [{ key: 'chains', 'instanceOf': Array}]);
@@ -259,54 +207,42 @@ function gameStateReducer(state, action) {
   }
 }
 
-function setUpGame(settings, state) {
-  // TODO: This code path does not support non-two player games.  May need change
+function setUpGame( settings, state, appSettings ) {
   let player1, player2;
   switch (settings.gameType) {
     case "local":
-      player1 = new LocalHumanPlayer(settings.playerNames[0]);
-      player2 = new LocalHumanPlayer(settings.playerNames[1]);
+    player1 = new Player(settings.playerNames[0], playerTypes.LOCAL);
+    player2 = new Player(settings.playerNames[1], playerTypes.LOCAL);
+          break;
+  case "CPU": {
+    player1 = new Player(settings.playerNames[0], playerTypes.LOCAL);
+
+    let cpuType = {
+      "random": CPUTypes.RANDOM,
+      "weak": CPUTypes.WEAK,
+      "basic": CPUTypes.BASIC,
+    }[settings.cpuDifficulty];
+    if (cpuType === undefined) throw `Incorrect settings.cpuDifficulty value: ${settings.cpuDifficulty}`;
+
+    player2 = new Player(settings.playerNames[1], playerTypes.CPU, cpuType );
       break;
-    case "CPU":
-      player1 = new LocalHumanPlayer(settings.playerNames[0]);
-      switch (settings.cpuDifficulty) {
-        case "random":
-          player2 = new RandomPlayer(settings.playerNames[1]);
-          break;
-        case "weak":
-          player2 = new WeakAI(settings.playerNames[1]);
-          break;
-        case "basic":
-          player2 = new BasicAI(settings.playerNames[1]);
-          break;
-        default:
-          throw `Incorrect settings.cpuDifficulty value: ${settings.cpuDifficulty}`;
-      }
-      break;
-    case "online":
-      if (settings.isHost) {
-        player1 = new LocalHumanPlayer(settings.playerNames[0]);
-        player2 = new RemotePlayer(settings.playerNames[1]);
-      } else {
-        player1 = new RemotePlayer(settings.playerNames[0]);
-        player2 = new LocalHumanPlayer(settings.playerNames[1]);
-      }
+  } case "online":
+    player1 = new Player(settings.playerNames[0], settings.isHost ? playerTypes.LOCAL : playerTypes.REMOTE );
+    player2 = new Player(settings.playerNames[1], !settings.isHost ? playerTypes.LOCAL : playerTypes.REMOTE );
       break;
     default:
       throw `incorrect settings.gameType value: ${settings.gameType}`;
   }
-
   return {...state,
     'players': [player1, player2],
-    'playerScores': [0, 0],
     'currentPlayer': 0,
-    'numberMovesCompleted': state.numberMovesCompleted + 1,
     'moveHistory': new MoveHistory(),
     'matchNumber': state.matchNumber + 1,
     'gameBoardState': new SquareGrid(settings.boardWidth, settings.boardHeight),
     'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
-    'gameActive': true,
+    'appState': appStates.MATCH,
     'gameSettings': settings,
+    'appSettings': {...appSettings},
   };
 }
 

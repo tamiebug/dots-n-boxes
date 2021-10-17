@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AppSettingsMenu } from "./AppSettingsMenu.js";
 import { useGameStore } from "./GameStore.js";
 import { GameStartPanelMenu } from "./GameStartPanelMenu.js";
-import { playerEvents } from "./players.js";
-import { Move , printObjectToJSON, MoveHistory } from "./utility.js";
+import { printObjectToJSON, MoveHistory } from "./utility.js";
 
 const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
@@ -13,7 +12,7 @@ export function ControlPanel(props) {
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
   const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
 
-  const { players, playerScores, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
+  const { players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
   
   useEffect(() => {
     if (props.appSettings.savePreviousMatchSettings === true) {
@@ -76,10 +75,10 @@ export function ControlPanel(props) {
       />}
       <div className="row">
         <div className="col" id="playerNameDisplay">
-          <h1 className="player-1">{ players[0]._name }[{ playerScores[0] }]</h1>
+          <h1 className="player-1">{ players[0].name }[{ players[0].score }]</h1>
           <h1>vs</h1>
-          <h1 className="player-2">{ players[1]._name }[{ playerScores[1] }]</h1>
-          <h2 className="who-goes">{ players[currentPlayer]._name } goes</h2>
+          <h1 className="player-2">{ players[1].name }[{ players[1].score }]</h1>
+          <h2 className="who-goes">{ players[currentPlayer].name } goes</h2>
           <div className="row">
             <PanelButton
               onMouseClick={() => setShowAppSettingsMenu(true)}
@@ -155,52 +154,8 @@ function PanelButton(props) {
 }
 
 function applySettings(gameStateDispatch, settings, appSettings) {
-  const players = [0, 1];
   gameStateDispatch({ type: '__runBatchedActions', batchedActions: [
-    { type: 'setUpGame', settings },
-    { type: '__runBatchedActions', 
-      batchedActions: players.map((playerNumber) => ({ 
-        type: 'registerPlayerCallback', 
-        player: playerNumber, 
-        callback: (coms) => {
-          switch (coms.type) {
-            case playerEvents.SUBMIT_MOVE:
-              if (coms.move.constructor.name !== Move.name) {
-                throw `player coms parsing error:  move type coms with no move field`;
-              } else {
-                if (appSettings.showMoveRanges) {
-                  gameStateDispatch({ 
-                    type: 'attemptMove', 
-                    move: coms.move,
-                    range: coms.range,
-                    player: playerNumber,
-                  });
-                } else {
-                  gameStateDispatch({ 
-                    type: 'attemptMove', 
-                    move: coms.move,
-                    player: playerNumber,
-                  });
-                }
-              }
-              break;
-            case playerEvents.AI_SHOW_CHAINS:
-              gameStateDispatch({
-                type: 'showChains',
-                chains: coms.chains,
-              });
-              break;
-            case playerEvents.AI_HIDE_CHAINS:
-              gameStateDispatch({
-                type: 'hideChains',
-              });
-              break;
-            default:
-              throw `unrecognized player com type: ${coms.type}`;
-        }},
-      })),
-    },
-    { type: 'updatePlayers', samePlayerGoes: true },
+    { type: 'setUpGame', settings, appSettings},
     { type: 'startNextTurnIfAble', samePlayerGoes: true },
   ]});
 }

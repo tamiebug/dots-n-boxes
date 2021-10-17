@@ -1,4 +1,4 @@
-import { testables, TaggedChain, BasicAI, playerEvents } from './players';
+import { testables, TaggedChain, CPUMoveFunctions, CPUTypes } from './CPU';
 import { Move, SquareGrid } from './utility';
 import fs from "fs";
 
@@ -128,19 +128,8 @@ describe('BasicAI', () => {
   }
 
   test.concurrent.each(testData)('selects the correct range of moves on turn %i from %s', (index, filename, range, gameState) => {
-    const basicAI = new BasicAI("BasicAI Test Friend", 0);
-
-    const aiTestingPromise = new Promise( resolve => {
-      basicAI.registerCallback( (call) => {
-        if (call.type !== playerEvents.SUBMIT_MOVE) return;
-        expect(call.range).toBeSameSetOfMoves(range);
-        resolve(call.range);
-      } );    
-      basicAI.updatePlayerState( gameState );
-      basicAI.startTurn();
-    });
-
-    return aiTestingPromise.then(aiRange => expect(aiRange).toBeSameSetOfMoves(range));
+    const aiTestingPromise = CPUMoveFunctions[CPUTypes.BASIC]( { gameBoardState: gameState }, 0, true ).then( moves => expect(moves).toBeSameSetOfMoves(range));
+    return aiTestingPromise;
   });
 });
 

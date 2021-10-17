@@ -242,6 +242,10 @@ export class SquareGrid {
     };
   }
 
+  getMaximumPointsPossible() {
+    return ( this.nRows - 1 ) * ( this.nColumns - 1 );
+  }
+
   static fromJSON(json) {
     const retGrid = new SquareGrid(json.nRows, json.nColumns);
     retGrid.squares = json.squares;
