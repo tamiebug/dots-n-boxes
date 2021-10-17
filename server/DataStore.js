@@ -29,7 +29,7 @@ export class DataStore {
       return this.userNamesToSocketIds.get(userName);
     else
       log.debug(`returnSocketId not given either a socketId or userName`);
-      return undefined;
+    return undefined;
   }
 
   createGame({ socketId, userName, dimensions, description }) {
@@ -104,7 +104,7 @@ export class DataStore {
       }
       else // socketId == guestSocketId
         this.socketIdsToGameIds.delete(guestSocketId);
-        game.players.guest = null;
+      game.players.guest = null;
       return { wasHost: false, hostSocketId };
     }
     return { failed: true };
@@ -161,7 +161,7 @@ export class DataStore {
 
   getGamesList() {
     // We do not return ready status here.  Maybe change in future?
-    return Array.from(this.gamesMap).filter( ([,game]) => game.players.guest == null).map(([key, entry]) => 
+    return Array.from(this.gamesMap).filter( ([,game]) => game.players.guest == null).map(([key, entry]) =>
       ({ hostName: this.getUserNameFromSocketId(entry.players.host.socketId), gameId: key, dimensions: entry.dimensions, description: entry.description }));
   }
 

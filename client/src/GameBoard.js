@@ -37,53 +37,53 @@ export function GameBoard() {
   function handleMouseEvent(event, row, column) {
     if (selectedCoordinate == null) {
       switch (event) {
-        case mouseEvents.DOWN:
-          highlightDot(row, column);
-          setSelectedCoordinate({ row, column });
-          break;
-        case mouseEvents.UP:
-          break;
-        case mouseEvents.ENTER:
-          highlightDot(row, column);
-          break;
-        case mouseEvents.LEAVE:
-          unHighlightDot(row, column);
-          break;
+      case mouseEvents.DOWN:
+        highlightDot(row, column);
+        setSelectedCoordinate({ row, column });
+        break;
+      case mouseEvents.UP:
+        break;
+      case mouseEvents.ENTER:
+        highlightDot(row, column);
+        break;
+      case mouseEvents.LEAVE:
+        unHighlightDot(row, column);
+        break;
       }
     } else {
       const { 'row': selectedRow, 'column': selectedColumn } = selectedCoordinate;
       const isAdjacent = ((Math.abs(selectedColumn - column) + Math.abs(selectedRow - row)) == 1);
       switch (event) {
-        case mouseEvents.DOWN:
+      case mouseEvents.DOWN:
+        unHighlightPossibleMove();
+        setSelectedCoordinate({ row, column });
+        break;
+      case mouseEvents.UP:
+        if (isAdjacent) {
+          attemptMove(row, column);
           unHighlightPossibleMove();
-          setSelectedCoordinate({ row, column });
-          break;
-        case mouseEvents.UP:
-          if (isAdjacent) {
-            attemptMove(row, column);
-            unHighlightPossibleMove();
-          }
+        }
+        setSelectedCoordinate(null);
+        break;
+      case mouseEvents.ENTER:
+        if (!mouseTracker.isMouseButtonDown()) {
+          // happens when mouse is released outside of a selection circle
           setSelectedCoordinate(null);
           break;
-        case mouseEvents.ENTER:
-          if (!mouseTracker.isMouseButtonDown()) {
-            // happens when mouse is released outside of a selection circle
-            setSelectedCoordinate(null);
-            break;
-          }
-          highlightDot(row, column);
-          if (isAdjacent) {
-            highlightPossibleMove(row, column);
-          }
-          break;
-        case mouseEvents.LEAVE:
-          if (isAdjacent) {
-            unHighlightPossibleMove();
-          }
-          if (selectedRow != row || selectedColumn != column) {
-            unHighlightDot(row, column);
-          }
-          break;
+        }
+        highlightDot(row, column);
+        if (isAdjacent) {
+          highlightPossibleMove(row, column);
+        }
+        break;
+      case mouseEvents.LEAVE:
+        if (isAdjacent) {
+          unHighlightPossibleMove();
+        }
+        if (selectedRow != row || selectedColumn != column) {
+          unHighlightDot(row, column);
+        }
+        break;
       }
     }
   }

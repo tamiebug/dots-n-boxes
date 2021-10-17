@@ -26,15 +26,15 @@ describe("The dots-n-boxes server", () => {
       const port = httpServer.address().port;
       clientSockets = clientSockets.map( () => new ioClient(`http://localhost:${port}`));
 
-      io.on("connection", socket => { 
+      io.on("connection", socket => {
         // Hook up the test server to the incoming request handler methods
-        Object.entries( socketEventHandlers ).forEach( ([ command, func ]) => 
+        Object.entries( socketEventHandlers ).forEach( ([ command, func ]) =>
           socket.on(command, (...args) => {
             const callback = typeof(args[args.length - 1]) === 'function' ? args[args.length - 1] : () => {};
             func({ data: args[0], callback, socket, io });
           }));
       });
-      
+
       const clientConnectPromises = clientSockets.map( socket => new Promise(res => socket.on("connect", res)) );
       Promise.all(clientConnectPromises).then( done() );
     });
@@ -96,7 +96,7 @@ describe("The dots-n-boxes server", () => {
   test("rejects game lobby creation attempt with invalid or missing settings", async () => {
     clearDataStore();
     const hostSocket = clientSockets[0];
-    const badSettings = [ 
+    const badSettings = [
       {},
       { dimensions: { boardWithd: 6, boardHeight: 6}, description: "This is a game"},
       { dimensins: { boardWidth: 6, boardHeight: 6}, description: "This is a game"},
@@ -113,7 +113,7 @@ describe("The dots-n-boxes server", () => {
 
   test("properly rejects leaving game lobby when you're not in one", async () => {
     clearDataStore();
-    const guestSocket = clientSockets[0]; 
+    const guestSocket = clientSockets[0];
 
     await expect(emitPromise(guestSocket, sApi.LeaveLobby, ""))
       .resolves.toMatchObject({ success: false });
@@ -152,7 +152,7 @@ describe("The dots-n-boxes server", () => {
       { dimensions : { boardWidth: 10, boardHeight: 10}, description: "Pros only pls n thnk you"},
       { dimensions : { boardWidth: 7, boardHeight: 7}, description: "Lucky game, join now"}
     ];
-  
+
     test("registering their names", async () => {
       for (const [index, name] of names.entries()) {
         await expect(emitPromise(clientSockets[index], sApi.ReserveName, { name }))
@@ -173,7 +173,7 @@ describe("The dots-n-boxes server", () => {
           .resolves.toMatchObject(gameSettings.map( (settings, settingsIndex) => ({...settings, hostName: names[settingsIndex], gameId: expect.anything()}) ));
       }
     });
-    
+
     test("trying to leave created lobbies", async () => {
       await expect(emitPromise(clientSockets[0], sApi.LeaveLobby))
         .resolves.toEqual({ success: true });
@@ -183,7 +183,7 @@ describe("The dots-n-boxes server", () => {
         .resolves.toMatchObject([{ hostName: names[1]}]);
     });
 
-    
+
     test("trying to join same lobby", async () => {
       const hostPromise = responsePromise(clientSockets[1], cApi.GuestJoined);
 
@@ -206,7 +206,7 @@ describe("The dots-n-boxes server", () => {
         .resolves.toEqual({ success: true });
       await expect(emitPromise(hostSocket, sApi.PlayerStatusChange, { ready: true }))
         .resolves.toEqual({ success: true });
-   
+
       await expect(emitPromise(clientSockets[2], sApi.PlayerStatusChange, { ready: true }))
         .resolves.toEqual({ success: false, reason: "Cannot find associated player gameId.  Are they in a game?"});
 

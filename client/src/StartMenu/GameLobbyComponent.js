@@ -29,43 +29,43 @@ export function GameLobbyComponent({ setGameSettingsAndKillMenu, linkTo, formDat
 
   const lobbyEventCallback = event => {
     switch (event.type) {
-      case lobbyEvents.HOST_LEFT:
-        resetLobby();
-        goBack();
-        break;
-      case lobbyEvents.HOST_READY:
-        setHostReady(true);
-        break;
-      case lobbyEvents.HOST_NOT_READY:
-        setHostReady(false);
-        break;
-      case lobbyEvents.GUEST_KICKED:
-        resetLobby();
-        alert("You have been kicked from lobby");
-        goBack();
-        break;
-      case lobbyEvents.GUEST_JOINED:
-        setPlayers({ hostName, guestName: event.playerName });
-        break;
-      case lobbyEvents.GUEST_LEFT:
-        setPlayers({ hostName, guestName: null });
-        break;
-      case lobbyEvents.GUEST_READY:
-        setGuestReady(true);
-        break;
-      case lobbyEvents.GUEST_NOT_READY:
-        setGuestReady(false);
-        break;
-      case lobbyEvents.START_GAME:
-        console.log("starting game");
-        setGameSettingsAndKillMenu({
-          boardHeight: event.settings.dimensions.boardHeight,
-          boardWidth: event.settings.dimensions.boardWidth,
-          playerNames: [hostName, guestName],
-          gameType: "online",
-          isHost: formData.isHost
-        });
-        break;
+    case lobbyEvents.HOST_LEFT:
+      resetLobby();
+      goBack();
+      break;
+    case lobbyEvents.HOST_READY:
+      setHostReady(true);
+      break;
+    case lobbyEvents.HOST_NOT_READY:
+      setHostReady(false);
+      break;
+    case lobbyEvents.GUEST_KICKED:
+      resetLobby();
+      alert("You have been kicked from lobby");
+      goBack();
+      break;
+    case lobbyEvents.GUEST_JOINED:
+      setPlayers({ hostName, guestName: event.playerName });
+      break;
+    case lobbyEvents.GUEST_LEFT:
+      setPlayers({ hostName, guestName: null });
+      break;
+    case lobbyEvents.GUEST_READY:
+      setGuestReady(true);
+      break;
+    case lobbyEvents.GUEST_NOT_READY:
+      setGuestReady(false);
+      break;
+    case lobbyEvents.START_GAME:
+      console.log("starting game");
+      setGameSettingsAndKillMenu({
+        boardHeight: event.settings.dimensions.boardHeight,
+        boardWidth: event.settings.dimensions.boardWidth,
+        playerNames: [hostName, guestName],
+        gameType: "online",
+        isHost: formData.isHost
+      });
+      break;
     }
   };
 

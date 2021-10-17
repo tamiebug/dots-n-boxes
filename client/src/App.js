@@ -37,7 +37,7 @@ export function App() {
       </div>
       <div className="col col-sm-auto">
         <ControlPanel key={ 0 } { ...{appSettings, setAppSettings} }/>
-      </div> 
+      </div>
     </div>
   );
 }

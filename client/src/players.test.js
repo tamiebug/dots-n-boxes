@@ -73,7 +73,7 @@ describe('TaggedChain', () => {
     test('properly identifies a reversed acyclical chain of moves as equal to the original', () => {
       expect(acyclicalTaggedChainA.isEquivalentTo(reverseChain(acyclicalTaggedChainA))).toBe(true);
     });
-   
+
     test('properly identifies a reversed cyclical chain of moves as equal to the original', () => {
       expect(reverseChain(cyclicalTaggedChainA).isEquivalentTo(cyclicalTaggedChainA)).toBe(true);
     });
@@ -107,7 +107,7 @@ describe('BasicAI', () => {
   const testSuite = ([
     ['MoveHistory2.json', [3,3]],
   ]);
- 
+
   const loadedMoveHistories = testSuite.map(([filename, dimensions]) => (
     {filename, dimensions, 'moveHistory': loadMoveHistoryFromJSON(`./client/src/test_fixtures/${filename}`)}));
 
@@ -245,16 +245,16 @@ expect.extend({toBeEquivalentTaggedChainListTo(received, taggedChainList) {
     return {
       pass : false,
       message : () => `Expected value and taggedChainList to have the same TaggedChains.  However, 
-        ${receivedCopyLength} chains in value and ${taggedChainListCopyLength} chains in taggedChainList could not be matched.` 
-      };
-    }
+        ${receivedCopyLength} chains in value and ${taggedChainListCopyLength} chains in taggedChainList could not be matched.`
+    };
+  }
 }});
 
 describe('groupMovesIntoTaggedChains', () => {
   const testTaggedChains = loadTaggedChainsFromJSON('./client/src/test_fixtures/TaggedChains1.json');
   const testMoveHistoryJSON = JSON.parse(fs.readFileSync("./client/src/test_fixtures/MoveHistory1.json"));
   let gameState = new SquareGrid(5, 5);
- 
+
   const testSquareGrids = testMoveHistoryJSON.map((item) => {
     const move = Move.fromJSON(item.move);
     gameState = gameState.update(move);
@@ -266,7 +266,7 @@ describe('groupMovesIntoTaggedChains', () => {
     expect(testables.groupMovesIntoTaggedChains(
       boardState, boardState.findSquareCompletingMoves(), testables.findCompletableSquareMakers(boardState)
     )).toBeEquivalentTaggedChainListTo(taggedChains);
- });
+  });
 
   const testTaggedChainsJSON2 = JSON.parse(fs.readFileSync('./client/src/test_fixtures/TaggedChains3.json'));
   const testTaggedChains2 = testTaggedChainsJSON2.map(chainJSON => TaggedChain.fromJSON(chainJSON));
@@ -278,5 +278,5 @@ describe('groupMovesIntoTaggedChains', () => {
       testGameState2, testGameState2.findSquareCompletingMoves(), testables.findCompletableSquareMakers(testGameState2)
     )).toBeEquivalentTaggedChainListTo(testTaggedChains2);
   });
-  
+
 });

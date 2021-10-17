@@ -20,7 +20,7 @@ export function BoardSizeComponent({ formData, setFormData, setGameSettingsAndKi
       gameType: formData.gameType,
       cpuDifficulty: formData.cpuDifficulty,
     });
-  } 
+  }
 
   return <form onSubmit={onFormSubmit}>
     <fieldset>

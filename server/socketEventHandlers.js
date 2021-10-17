@@ -88,7 +88,7 @@ function handleLeaveLobby({ socket, callback, io }) {
   if ( result.failed ) {
     callback({ success: false, reason: `Failed to remove player ${ds.getUserNameFromSocketId( socket.id )} from lobby`});
   }
-  
+
   log.info(`player ${ds.getUserNameFromSocketId(socket.id)} has left lobby`);
   if ( result.wasHost ) {
     io.to( result.guestSocketId ).emit( cApi.HostLeft );
@@ -123,11 +123,11 @@ function handlePlayerStatusChange({ socket, data, callback, io }) {
   if (!gameId) {
     callback({ success: false, reason: "Cannot find associated player gameId.  Are they in a game?"});
     return;
-  } 
+  }
 
   const game = ds.getGame(gameId);
   const isHost = game.players.host.socketId == socket.id;
-  
+
   const guestSocketId = game.players.guest?.socketId;
   const hostSocketId = game.players.host.socketId;
 

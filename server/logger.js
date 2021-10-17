@@ -5,8 +5,8 @@ const logger = createLogger({
   level: "debug",
   defaultMeta: { service: 'user-service' },
   transports: [
-    new winston.transports.File({ 
-      filename: 'server.log', 
+    new winston.transports.File({
+      filename: 'server.log',
       level: 'verbose',
       format: format.combine(
         format.splat(),

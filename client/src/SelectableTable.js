@@ -3,7 +3,7 @@ import React , { useEffect, useState, useRef } from "react";
 export function SelectableTable (props) {
   const [ dummyVariable, setDummyVariable ] = useState(false);  // only used to trigger re-renders on ref change.
 
-  const previousData = useRef();  
+  const previousData = useRef();
   useEffect(() => {
     let newSelectedRow = -1;
     console.log(`the data: ${JSON.stringify(props.data)}`);
@@ -12,7 +12,7 @@ export function SelectableTable (props) {
       const oldKey = previousData.current[props.selectedRow].key;
       if (oldKey !== undefined) {
         newSelectedRow = props.data.findIndex(row => row.key == oldKey);
-      } 
+      }
     }
     props.setSelectedRow(newSelectedRow); console.log(`Table index from load ${newSelectedRow}`);
     setDummyVariable(!dummyVariable);

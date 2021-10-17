@@ -10,16 +10,16 @@ import { BoardSizeComponent } from "./StartMenu/BoardSizeComponent";
 import { ChoosePlayerNameComponent } from "./StartMenu/ChoosePlayerNameComponent";
 import { AIDifficultyComponent } from "./StartMenu/AIDifficultyComponent";
 
-export function GameStartPanelMenu({ previousSettings, setGameSettingsAndKillMenu, appSettings }) {  
+export function GameStartPanelMenu({ previousSettings, setGameSettingsAndKillMenu, appSettings }) {
   const menuItems = {
-    "Home Page": ({ linkTo, formData }) => <HomePageComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu, appSettings }} />, 
+    "Home Page": ({ linkTo, formData }) => <HomePageComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu, appSettings }} />,
     "Choose Opponent Type": ({ linkTo, formData, setFormData }) => <ChooseOpponentTypeComponent { ...{ linkTo, formData, setFormData }} />,
-    "Choose Online Name": ({ linkTo, formData, setFormData }) => <ChooseOnlineNameComponent { ...{ linkTo, formData, setFormData }} />, 
-    "Available Games List": ({ linkTo, formData, setFormData }) => <AvailableGamesListComponent { ...{ linkTo, formData, setFormData }} />, 
-    "Board Size": ({ formData, setFormData }) => <BoardSizeComponent { ...{ formData, setFormData, setGameSettingsAndKillMenu, previousSettings }} />, 
-    "Host Game Lobby": ({ linkTo, formData, setFormData }) => <HostGameLobbyComponent {...{ previousSettings, linkTo, formData, setFormData }} />, 
-    "Game Lobby": ({ linkTo, formData }) => <GameLobbyComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu }} />, 
-    "Choose Player Name": ({ linkTo, formData, setFormData }) => <ChoosePlayerNameComponent { ...{ linkTo, formData, setFormData }} />, 
+    "Choose Online Name": ({ linkTo, formData, setFormData }) => <ChooseOnlineNameComponent { ...{ linkTo, formData, setFormData }} />,
+    "Available Games List": ({ linkTo, formData, setFormData }) => <AvailableGamesListComponent { ...{ linkTo, formData, setFormData }} />,
+    "Board Size": ({ formData, setFormData }) => <BoardSizeComponent { ...{ formData, setFormData, setGameSettingsAndKillMenu, previousSettings }} />,
+    "Host Game Lobby": ({ linkTo, formData, setFormData }) => <HostGameLobbyComponent {...{ previousSettings, linkTo, formData, setFormData }} />,
+    "Game Lobby": ({ linkTo, formData }) => <GameLobbyComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu }} />,
+    "Choose Player Name": ({ linkTo, formData, setFormData }) => <ChoosePlayerNameComponent { ...{ linkTo, formData, setFormData }} />,
     "AI Difficulty": ({ linkTo, formData, setFormData }) => <AIDifficultyComponent { ...{ linkTo, formData, setFormData, previousSettings }} />,
   };
 

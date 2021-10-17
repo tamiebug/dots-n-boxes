@@ -71,13 +71,13 @@ export class SquareGrid {
   //        |---                           |---|
   // e.g.   |    <-- moving here to create |   |
   //        |---                           |---|
-  let foundMoves = [];
-  for (const move of moveSet) {
-    if (this.moveCompletesBoxAbove(move) ||
+    let foundMoves = [];
+    for (const move of moveSet) {
+      if (this.moveCompletesBoxAbove(move) ||
         this.moveCompletesBoxBelow(move) ||
         this.moveCompletesBoxToRight(move) ||
         this.moveCompletesBoxToLeft(move)) {
-      foundMoves.push(move);
+        foundMoves.push(move);
       }
     }
     return foundMoves;
@@ -292,7 +292,7 @@ export class Move {
         return (this.r == move.r-1 && this.c == move.c) ||
           (this.r == move.r+1 && this.c == move.c);
       } else /* move.isVertical() */ {
-        return (this.r == move.r+1 && this.c == move.c) || 
+        return (this.r == move.r+1 && this.c == move.c) ||
           (this.r == move.r+1 && this.c == move.c-1) ||
           (this.r == move.r && this.c == move.c) ||
           (this.r == move.r && this.c == move.c-1);
@@ -313,7 +313,7 @@ export class Move {
   toString() {
     return "(" + this.r + ", " + this.c + ", " + (this.isHorizontal()? "h)" : "v)");
   }
-  
+
   static fromJSON(JSON) {
     return new Move(JSON.r, JSON.c, JSON._isHoriz);
   }
@@ -398,7 +398,7 @@ export class MoveHistory {
     const { move, player, range } = this.entries[this.length - 1];
     return { move, player, range, newMoveHistory: new MoveHistory([...this.entries.slice(0, -1)]) };
   }
-  
+
   getRawHistory() {
     return [... this.entries];
   }
@@ -417,13 +417,13 @@ export class MoveHistory {
 }
 
 export function printObjectToJSON(object, replacer = null) {
-    const jsonText = JSON.stringify(object, replacer, 2);
-    const jsonWindow = window.open();
-    jsonWindow.document.open();
-    jsonWindow.document.write('<html><body><pre>' + jsonText + '</pre></body></html>');
-    jsonWindow.document.close();
-    jsonWindow.focus();
-    return;
+  const jsonText = JSON.stringify(object, replacer, 2);
+  const jsonWindow = window.open();
+  jsonWindow.document.open();
+  jsonWindow.document.write('<html><body><pre>' + jsonText + '</pre></body></html>');
+  jsonWindow.document.close();
+  jsonWindow.focus();
+  return;
 }
 
 export function argmax(array) {

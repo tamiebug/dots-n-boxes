@@ -19,7 +19,7 @@ io.on('connection', socket => {
    * Using the ...args ensures that receiving a malformed request from a client with multiple data args doesn't
    * trip up the server
    */
-  Object.entries(socketEventHandlers).forEach(([ command, func ]) => 
+  Object.entries(socketEventHandlers).forEach(([ command, func ]) =>
     socket.on(command, (...args) => {
       const callback = typeof(args[args.length - 1]) === 'function' ? args[args.length - 1] : () => {};
       func({ data: args[0], callback, socket, io });

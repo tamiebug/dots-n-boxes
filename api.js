@@ -2,7 +2,7 @@ export const clientApi = Object.freeze({
   GuestJoined: "GUEST_JOINED",
   GuestLeft: "GUEST_LEFT",
   GuestReady: "GUEST_READY",
-  GuestNotReady: "GUEST_NOT_READY", 
+  GuestNotReady: "GUEST_NOT_READY",
   HostLeft: "HOST_LEFT",
   HostKicked: "HOST_KICKED",
   HostReady: "HOST_READY",
@@ -19,5 +19,5 @@ export const serverApi = Object.freeze({
   KickPlayer: "KICK_PLAYER",
   ReserveName: "RESERVE_NAME",
   GetOpenGamesList: "GET_OPEN_GAMES_LIST",
-  AttemptMove: "ATTEMPT_MOVE" 
+  AttemptMove: "ATTEMPT_MOVE"
 });

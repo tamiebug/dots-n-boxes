@@ -15,7 +15,7 @@ export function AIDifficultyComponent({ linkTo, formData, setFormData, previousS
     event.preventDefault();
     linkTo("Choose Player Name");
   }
- 
+
   return <form onSubmit={onSubmit}>
     <fieldset>
       <legend>AI Difficulty:</legend>

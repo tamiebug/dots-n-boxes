@@ -7,7 +7,7 @@ import { SocketProvider } from "./SocketContext.js";
 ReactDOM.render(
   <SocketProvider>
     <App />
-  </SocketProvider>, 
+  </SocketProvider>,
   document.getElementById("root"));
 
 document.addEventListener("dragstart", e => {e.preventDefault(); return false;});

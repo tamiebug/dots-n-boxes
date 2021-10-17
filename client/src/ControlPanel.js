@@ -13,7 +13,7 @@ export function ControlPanel(props) {
   const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
 
   const { players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
-  
+
   useEffect(() => {
     if (props.appSettings.savePreviousMatchSettings === true) {
       const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
@@ -33,7 +33,7 @@ export function ControlPanel(props) {
 
   function loadGameStateFromJSON() {
     const inputElement = document.getElementById("loadGameStateFromJSONHiddenInput");
-    
+
     inputElement.onchange = (event) => {
       const fileList = event.target.files;
       const reader = new FileReader();
@@ -62,13 +62,13 @@ export function ControlPanel(props) {
 
   return gameBoardState == null ? null : (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
-      {showStartMenu == true && <GameStartPanelMenu 
+      {showStartMenu == true && <GameStartPanelMenu
         name="GameMenu"
         previousSettings={ previousSettings }
         appSettings={ props.appSettings }
         setGameSettingsAndKillMenu={ s => setGameSettingsAndKillMenu(s) }
       />}
-      {showAppSettingsMenu == true && <AppSettingsMenu 
+      {showAppSettingsMenu == true && <AppSettingsMenu
         name="AppSettingsMenu"
         appSettings= {props.appSettings}
         setAppSettingsAndKillMenu= { settings => { setShowAppSettingsMenu(false); props.setAppSettings(settings); }}
@@ -92,7 +92,7 @@ export function ControlPanel(props) {
             </PanelButton>
           </div>
           {props.appSettings.debugMode && <>
-            <div className="row"> 
+            <div className="row">
               <PanelButton
                 onMouseClick={ () => printObjectToJSON(gameState.moveHistory) }
                 bootstrapType="warning"
@@ -117,7 +117,7 @@ export function ControlPanel(props) {
                 Save Game State to JSON
               </PanelButton>
             </div>
-          </> 
+          </>
           }
         </div>
       </div>

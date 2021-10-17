@@ -8,7 +8,7 @@ export function GameMenu({ defaultFormSettings, startingItemName, name, menuItem
   const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
   const [ isUndoAction, setIsUndoAction ] = useState(false);
 
-  const context = { 
+  const context = {
     linkTo: (destination, undo) => {
       if (undo) {
         const [lastPage, ...restOfPages] = previousMenuPages;
