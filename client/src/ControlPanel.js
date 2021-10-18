@@ -22,7 +22,7 @@ export function ControlPanel(props) {
     } else {
       setPreviousSettings(DEFAULT_GAME_SETTINGS);
     }
-    applySettings(gameStateDispatch, DEFAULT_GAME_SETTINGS, props.appSettings);
+    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS, appSettings: props.appSettings});
   }, [ ]);
 
   function onNewGame({ gameState, gameStateDispatch }) {
@@ -41,10 +41,12 @@ export function ControlPanel(props) {
       reader.onload = readerEvent => {
         const currentGameStateJSON = readerEvent.target.result;
         const { settings: newSettings, moveHistory: newMoveHistoryJSON } = JSON.parse(currentGameStateJSON);
-        applySettings(gameStateDispatch, newSettings, props.appSettings);
-        gameStateDispatch({ type: "loadGame", moveHistory: MoveHistory.fromJSON(newMoveHistoryJSON) });
-      };
 
+        gameStateDispatch({ type: "__runBatchedActions", batchedActions: [
+          { type: 'setUpGame', settings: newSettings, appSettings: props.appSettings },
+          { type: 'loadGame', moveHistory: MoveHistory.fromJSON(newMoveHistoryJSON) },
+        ]});
+      };
       reader.readAsText(fileList[0]);
     };
     inputElement.click();
@@ -57,7 +59,7 @@ export function ControlPanel(props) {
       const stringifiedSettings = JSON.stringify(settings);
       window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
     }
-    applySettings(gameStateDispatch, {...settings}, props.appSettings);
+    gameStateDispatch({ type: 'setUpGame', settings, appSettings: props.appSettings });
   }
 
   return gameBoardState == null ? null : (
@@ -151,11 +153,4 @@ function PanelButton(props) {
       { props.children }
     </button>
   );
-}
-
-function applySettings(gameStateDispatch, settings, appSettings) {
-  gameStateDispatch({ type: '__runBatchedActions', batchedActions: [
-    { type: 'setUpGame', settings, appSettings},
-    { type: 'startNextTurnIfAble', samePlayerGoes: true },
-  ]});
 }
