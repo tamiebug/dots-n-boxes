@@ -10,9 +10,9 @@ import { BoardSizeComponent } from "./StartMenu/BoardSizeComponent";
 import { ChoosePlayerNameComponent } from "./StartMenu/ChoosePlayerNameComponent";
 import { AIDifficultyComponent } from "./StartMenu/AIDifficultyComponent";
 
-export function GameStartPanelMenu({ previousSettings, setGameSettingsAndKillMenu, appSettings }) {
+export function GameStartPanelMenu({ previousSettings, setGameSettingsAndKillMenu }) {
   const menuItems = {
-    "Home Page": ({ linkTo, formData }) => <HomePageComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu, appSettings }} />,
+    "Home Page": ({ linkTo, formData }) => <HomePageComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu }} />,
     "Choose Opponent Type": ({ linkTo, formData, setFormData }) => <ChooseOpponentTypeComponent { ...{ linkTo, formData, setFormData }} />,
     "Choose Online Name": ({ linkTo, formData, setFormData }) => <ChooseOnlineNameComponent { ...{ linkTo, formData, setFormData }} />,
     "Available Games List": ({ linkTo, formData, setFormData }) => <AvailableGamesListComponent { ...{ linkTo, formData, setFormData }} />,

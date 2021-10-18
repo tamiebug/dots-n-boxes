@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
 import { GameMenu } from './GameMenu.js';
+import { useGameStore } from "./GameStore.js";
 
-export function AppSettingsMenu(props) {
+export function AppSettingsMenu({ setAppSettingsAndKillMenu }) {
+  const [ gameState ] = useGameStore();
   useEffect(() => {
-    if (!props.appSettings.debugMode)
+    if ( !gameState.appSettings.debugMode )
       document.querySelector("#AppSettingsForm input[name='Show Move Ranges']").disabled = true;
   }, []);
 
@@ -11,7 +13,7 @@ export function AppSettingsMenu(props) {
     "Application Settings" : ({ formData, setFormData }) => {
       function saveAppSettings( event ) {
         event.preventDefault();
-        props.setAppSettingsAndKillMenu(formData);
+        setAppSettingsAndKillMenu(formData);
       }
 
       function changeDebugMode() {
@@ -44,5 +46,5 @@ export function AppSettingsMenu(props) {
     }
   };
 
-  return <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={props.appSettings} menuItems={ menuItems } />;
+  return <GameMenu name="AppSettings" startingItemName="Application Settings" defaultFormSettings={ gameState.appSettings } menuItems={ menuItems } />;
 }

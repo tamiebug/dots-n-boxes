@@ -156,9 +156,9 @@ function gameStateReducer(state, action) {
   }
 
   case 'setUpGame':
-    validateAction(action, [{ key: 'settings', typeOf: 'object' }, { key: 'appSettings', typeOf: 'object' }]);
-    validateSettings(action.settings);
-    return setUpGame(action.settings, state, action.appSettings);
+    validateAction( action, [{ key: 'settings', typeOf: 'object' }] );
+    validateSettings( action.settings );
+    return setUpGame( action.settings, state );
 
   case 'loadGame': {
     validateAction(action, [{ key: 'moveHistory', "instanceOf": MoveHistory }]);
@@ -202,12 +202,21 @@ function gameStateReducer(state, action) {
     // set the CSS rule somehow... maybe we don't need this and it happens as part of round end/start?   Idk, tbd.
     return {...state};
 
+  case 'changeAppSettings': {
+    validateAction(action, [{ key: 'appSettings', typeOf: 'object' }]);
+
+    const localSettings = JSON.parse(window.localStorage.getItem('App Settings'));
+    const stringifiedSettings = JSON.stringify({ ...localSettings, ...action.appSettings });
+    window.localStorage.setItem( 'App Settings', stringifiedSettings );
+
+    return {...state, appSettings: action.appSettings };
+  }
   default:
     throw `gameStateReducer received an invalid action type ${action.type}`;
   }
 }
 
-function setUpGame( settings, state, appSettings ) {
+function setUpGame( settings, state ) {
   let player1, player2;
   switch (settings.gameType) {
   case "local":
@@ -242,7 +251,6 @@ function setUpGame( settings, state, appSettings ) {
     'taggedGrid': new TaggedGrid(settings.boardWidth, settings.boardHeight),
     'appState': appStates.MATCH,
     'gameSettings': settings,
-    'appSettings': {...appSettings},
   };
 }
 

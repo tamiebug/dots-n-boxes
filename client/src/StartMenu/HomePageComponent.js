@@ -1,6 +1,8 @@
 import React from "react";
+import { useGameStore } from "../GameStore";
 
-export function HomePageComponent({ linkTo, formData, setGameSettingsAndKillMenu, appSettings }) {
+export function HomePageComponent({ linkTo, formData, setGameSettingsAndKillMenu }) {
+  const [ gameState ] = useGameStore();
   function useSavedSettings(event) {
     event.preventDefault();
     setGameSettingsAndKillMenu({
@@ -21,7 +23,7 @@ export function HomePageComponent({ linkTo, formData, setGameSettingsAndKillMenu
         Play Over Network
       </button>
       <button className="gameMenuButton" onClick={useSavedSettings}>
-        Use {appSettings.savePreviousMatchSettings ? "Saved" : "Default"} Settings
+        Use { gameState.appSettings.savePreviousMatchSettings ? "Saved" : "Default" } Settings
       </button>
     </>
   );

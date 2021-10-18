@@ -6,6 +6,8 @@ import { printObjectToJSON } from "./utility";
 //export const gameStore = createStore( gameStateReducer, () => initialGameStoreState );
 //export const useGameStore = () => useStore( gameStore );
 
+export const DEFAULT_APP_SETTINGS = { debugMode: false, savePreviousMatchSettings: true };
+
 const changeHandlers = new Map(Object.entries({
   'moveHistory': moveHistoryChangeHandler,
 }));
@@ -14,6 +16,7 @@ export function GameEngine( store ) {
   this.store = store;
   store.subscribe( this.onStateBroadcast.bind( this ) );
   registerOnlineMoveCallback( move => store.dispatch({ type: 'onlineMoveAttempt', move }) );
+  loadAppSettingsFromBrowser( store.dispatch );
 }
 
 GameEngine.prototype.onStateBroadcast = function onStateBroadcast( state, oldState ) {
@@ -79,5 +82,12 @@ function updateRemotePlayers( state ) {
   if ( !state.players[lastPlayer].isRemote() && state.players.some( player => player.isRemote() )) {
     // TODO: Do we want to raise an error if this attempt fails?  Most likely.
     attemptOnlineMove( lastMove );
+  }
+}
+
+function loadAppSettingsFromBrowser( dispatch ) {
+  const localSettings = JSON.parse( window.localStorage.getItem('App Settings') );
+  if (localSettings) {
+    dispatch({ type: 'changeAppSettings', appSettings: {...DEFAULT_APP_SETTINGS, ...localSettings }});
   }
 }

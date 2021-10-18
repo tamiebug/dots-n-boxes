@@ -6,23 +6,23 @@ import { printObjectToJSON, MoveHistory } from "./utility.js";
 
 const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
-export function ControlPanel(props) {
+export function ControlPanel() {
   const [ gameState, gameStateDispatch ] = useGameStore();
   const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
-  const [ previousSettings, setPreviousSettings ] = useState(DEFAULT_GAME_SETTINGS);
+  const [ previousSettings, setPreviousSettings ] = useState( DEFAULT_GAME_SETTINGS );
 
-  const { players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
+  const { appSettings, players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
 
   useEffect(() => {
-    if (props.appSettings.savePreviousMatchSettings === true) {
+    if ( appSettings.savePreviousMatchSettings ) {
       const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
       const previousGameSettings = JSON.parse(previousGameSettingsString);
-      setPreviousSettings({...DEFAULT_GAME_SETTINGS, ...previousGameSettings});
+      setPreviousSettings({ ...DEFAULT_GAME_SETTINGS, ...previousGameSettings });
     } else {
       setPreviousSettings(DEFAULT_GAME_SETTINGS);
     }
-    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS, appSettings: props.appSettings});
+    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
   }, [ ]);
 
   function onNewGame() {
@@ -41,7 +41,7 @@ export function ControlPanel(props) {
         const { settings: newSettings, moveHistory: newMoveHistoryJSON } = JSON.parse(currentGameStateJSON);
 
         gameStateDispatch({ type: "__runBatchedActions", batchedActions: [
-          { type: 'setUpGame', settings: newSettings, appSettings: props.appSettings },
+          { type: 'setUpGame', settings: newSettings },
           { type: 'loadGame', moveHistory: MoveHistory.fromJSON(newMoveHistoryJSON) },
         ]});
       };
@@ -53,11 +53,11 @@ export function ControlPanel(props) {
   function setGameSettingsAndKillMenu(settings) {
     setShowStartMenu(false);
     setPreviousSettings({...settings});
-    if (props.appSettings.savePreviousMatchSettings === true) {
+    if ( appSettings.savePreviousMatchSettings === true ) {
       const stringifiedSettings = JSON.stringify(settings);
       window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
     }
-    gameStateDispatch({ type: 'setUpGame', settings, appSettings: props.appSettings });
+    gameStateDispatch({ type: 'setUpGame', settings });
   }
 
   return gameBoardState == null ? null : (
@@ -65,13 +65,11 @@ export function ControlPanel(props) {
       {showStartMenu == true && <GameStartPanelMenu
         name="GameMenu"
         previousSettings={ previousSettings }
-        appSettings={ props.appSettings }
         setGameSettingsAndKillMenu={ s => setGameSettingsAndKillMenu(s) }
       />}
       {showAppSettingsMenu == true && <AppSettingsMenu
         name="AppSettingsMenu"
-        appSettings= {props.appSettings}
-        setAppSettingsAndKillMenu= { settings => { setShowAppSettingsMenu(false); props.setAppSettings(settings); }}
+        setAppSettingsAndKillMenu= { appSettings => { setShowAppSettingsMenu(false); gameStateDispatch({ type: 'changeAppSettings', appSettings }); }}
       />}
       <div className="row">
         <div className="col" id="playerNameDisplay">
@@ -91,7 +89,7 @@ export function ControlPanel(props) {
               Settings
             </PanelButton>
           </div>
-          {props.appSettings.debugMode && <>
+          { appSettings.debugMode && <>
             <div className="row">
               <PanelButton
                 onMouseClick={ () => printObjectToJSON(gameState.moveHistory) }
