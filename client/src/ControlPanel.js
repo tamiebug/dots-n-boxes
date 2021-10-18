@@ -25,9 +25,7 @@ export function ControlPanel(props) {
     gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS, appSettings: props.appSettings});
   }, [ ]);
 
-  function onNewGame({ gameState, gameStateDispatch }) {
-    gameStateDispatch({ type: 'endCurrentTurn' });
-    gameState.players.forEach((_, player) => gameStateDispatch({ type: 'registerPlayerCallback', player: player, callback: () => {} }));
+  function onNewGame() {
     setShowStartMenu(true);
   }
 
@@ -136,7 +134,7 @@ export function ControlPanel(props) {
           <div className="row">
             <div className="col-sm-auto">
               <PanelButton
-                onMouseClick={ () => onNewGame({ gameState, gameStateDispatch }) }
+                onMouseClick={ () => onNewGame() }
                 bootstrapType="danger"
               >New Game</PanelButton>
             </div>
