@@ -7,6 +7,7 @@ import { printObjectToJSON } from "./utility";
 //export const useGameStore = () => useStore( gameStore );
 
 export const DEFAULT_APP_SETTINGS = { debugMode: false, savePreviousMatchSettings: true };
+export const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
 
 const changeHandlers = new Map(Object.entries({
   'moveHistory': moveHistoryChangeHandler,
@@ -17,6 +18,8 @@ export function GameEngine( store ) {
   store.subscribe( this.onStateBroadcast.bind( this ) );
   registerOnlineMoveCallback( move => store.dispatch({ type: 'onlineMoveAttempt', move }) );
   loadAppSettingsFromBrowser( store.dispatch );
+  applyDefaultGameSettings( store.dispatch );
+  store.dispatch({ type: 'returnToStartMenu' });
 }
 
 GameEngine.prototype.onStateBroadcast = function onStateBroadcast( state, oldState ) {
@@ -90,4 +93,8 @@ function loadAppSettingsFromBrowser( dispatch ) {
   if (localSettings) {
     dispatch({ type: 'changeAppSettings', appSettings: {...DEFAULT_APP_SETTINGS, ...localSettings }});
   }
+}
+
+function applyDefaultGameSettings( dispatch ) {
+  dispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
 }

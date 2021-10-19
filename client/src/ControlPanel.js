@@ -1,32 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppSettingsMenu } from "./AppSettingsMenu.js";
-import { useGameStore } from "./GameStore.js";
+import { appStates, useGameStore } from "./GameStore.js";
 import { GameStartPanelMenu } from "./GameStartPanelMenu.js";
 import { printObjectToJSON, MoveHistory } from "./utility.js";
 
-const DEFAULT_GAME_SETTINGS =  { boardHeight: 5, boardWidth: 5, playerNames: ["Player 1", "Player 2"], gameType: "local", cpuDifficulty: "random" };
-
 export function ControlPanel() {
   const [ gameState, gameStateDispatch ] = useGameStore();
-  const [ showStartMenu, setShowStartMenu ] = useState(true);
   const [ showAppSettingsMenu, setShowAppSettingsMenu ] = useState(false);
-  const [ previousSettings, setPreviousSettings ] = useState( DEFAULT_GAME_SETTINGS );
 
-  const { appSettings, players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
-
-  useEffect(() => {
-    if ( appSettings.savePreviousMatchSettings ) {
-      const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
-      const previousGameSettings = JSON.parse(previousGameSettingsString);
-      setPreviousSettings({ ...DEFAULT_GAME_SETTINGS, ...previousGameSettings });
-    } else {
-      setPreviousSettings(DEFAULT_GAME_SETTINGS);
-    }
-    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
-  }, [ ]);
+  const { appSettings, appState, players, currentPlayer, gameSettings, moveHistory, gameBoardState } = gameState;
 
   function onNewGame() {
-    setShowStartMenu(true);
+    gameStateDispatch({ type: 'returnToStartMenu' });
   }
 
   function loadGameStateFromJSON() {
@@ -50,24 +35,10 @@ export function ControlPanel() {
     inputElement.click();
   }
 
-  function setGameSettingsAndKillMenu(settings) {
-    setShowStartMenu(false);
-    setPreviousSettings({...settings});
-    if ( appSettings.savePreviousMatchSettings === true ) {
-      const stringifiedSettings = JSON.stringify(settings);
-      window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
-    }
-    gameStateDispatch({ type: 'setUpGame', settings });
-  }
-
   return gameBoardState == null ? null : (
     <div className="col-sm-auto d-flex flex-column gameControlPanel jumbotron">
-      {showStartMenu == true && <GameStartPanelMenu
-        name="GameMenu"
-        previousSettings={ previousSettings }
-        setGameSettingsAndKillMenu={ s => setGameSettingsAndKillMenu(s) }
-      />}
-      {showAppSettingsMenu == true && <AppSettingsMenu
+      <GameStartPanelMenu name="GameMenu"/>
+      {showAppSettingsMenu == true && appState !== appStates.PRE_MATCH && <AppSettingsMenu
         name="AppSettingsMenu"
         setAppSettingsAndKillMenu= { appSettings => { setShowAppSettingsMenu(false); gameStateDispatch({ type: 'changeAppSettings', appSettings }); }}
       />}
@@ -79,7 +50,7 @@ export function ControlPanel() {
           <h2 className="who-goes">{ players[currentPlayer].name } goes</h2>
           <div className="row">
             <PanelButton
-              onMouseClick={() => setShowAppSettingsMenu(true)}
+              onMouseClick={() => { if ( appState !== appStates.PRE_MATCH ) setShowAppSettingsMenu(true); }}
               bootstrapType="secondary"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-gear" viewBox="0 0 16 16">

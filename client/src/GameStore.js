@@ -193,6 +193,9 @@ function gameStateReducer(state, action) {
     console.log("GAME DEACTIVATED");
     return {...state, appState: appStates.PAUSED };
 
+  case 'returnToStartMenu':
+    return { ...state, appState: appStates.PRE_MATCH };
+
   case 'showChains': {
     validateAction(action, [{ key: 'chains', 'instanceOf': Array}]);
     const boxTags = renderBoxChainsIntoTags(action.chains);
