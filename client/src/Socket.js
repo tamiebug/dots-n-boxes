@@ -32,8 +32,10 @@ export const socket = {
    */
   socket: null,
   connectSocket() {
-    if (!this.socket) this.socket = io(SOCKET_SERVER);
-    setUpSocketListeners();
+    if (!this.socket) {
+      this.socket = io(SOCKET_SERVER);
+      setUpSocketListeners();
+    }
   },
   emit( ...args ) {
     this.connectSocket();
