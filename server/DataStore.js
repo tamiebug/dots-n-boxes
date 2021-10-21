@@ -180,9 +180,9 @@ export class DataStore {
     if (Object.keys(dimensions).length == 2 &&
       typeof dimensions.boardWidth == "number" &&
       typeof dimensions.boardHeight == "number" &&
-      dimensions.boardWidth > MIN_BOARD_DIMENSION &&
+      dimensions.boardWidth >= MIN_BOARD_DIMENSION &&
       dimensions.boardWidth < MAX_BOARD_DIMENSION &&
-      dimensions.boardHeight > MIN_BOARD_DIMENSION &&
+      dimensions.boardHeight >= MIN_BOARD_DIMENSION &&
       dimensions.boardHeight < MAX_BOARD_DIMENSION &&
       typeof description == "string" &&
       description.length < MAX_DESCRIPTION_LENGTH ) { return true; }
