@@ -61,5 +61,5 @@ export function GameStartPanelMenu() {
     "AI Difficulty": ({ linkTo, formData, setFormData }) => <AIDifficultyComponent { ...{ linkTo, formData, setFormData, previousSettings }} />,
   };
 
-  return gameState.appState == appStates.PRE_MATCH && <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ previousSettings } menuItems={ menuItems } />;
+  return <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ previousSettings } menuItems={ menuItems } showMenu= { gameState.appState == appStates.PRE_MATCH } />;
 }

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
-export function GameMenu({ defaultFormSettings, startingItemName, name, menuItems }) {
+export function GameMenu({ defaultFormSettings, startingItemName, name, menuItems, showMenu }) {
   const [ formData, setFormData ] = useState({...defaultFormSettings});
 
   const [ currentMenuPage, setCurrentMenuPage ] = useState(startingItemName);
@@ -27,8 +27,9 @@ export function GameMenu({ defaultFormSettings, startingItemName, name, menuItem
   };
 
   const classNames = `gameMenuItem${isUndoAction ? "-reverse" : ""}`;
+  showMenu = showMenu == undefined ? true : showMenu;
   return (
-    <div className="gameMenuModal">
+    showMenu && <div className="gameMenuModal">
       <TransitionGroup childFactory={ element => React.cloneElement( element, { classNames })}>
         <CSSTransition
           key={ currentMenuPage }
