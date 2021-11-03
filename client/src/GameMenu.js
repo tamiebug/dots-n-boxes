@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, createContext} from "react";
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
-export function GameMenu({ defaultFormSettings, startingItemName, name, menuItems, showMenu }) {
-  const [ formData, setFormData ] = useState({...defaultFormSettings});
+export const GameMenuContext = createContext( null );
 
+export function GameMenu({ children, defaultFormSettings, startingItemName, name, showMenu }) {
+  const [ formData, setFormData ] = useState({...defaultFormSettings});
   const [ currentMenuPage, setCurrentMenuPage ] = useState(startingItemName);
   const [ previousMenuPages, setPreviousMenuPages ] = useState([]);
   const [ isUndoAction, setIsUndoAction ] = useState(false);
+
+  const pageNames = React.Children.map( children, children => children.props.name );
 
   const context = {
     linkTo: (destination, undo) => {
@@ -36,17 +39,19 @@ export function GameMenu({ defaultFormSettings, startingItemName, name, menuItem
           classNames={ `gameMenuItem${isUndoAction ? "-reverse" : ""}` }
           timeout={500}
         >
-          <div className="gameMenuModalContent">
-            <div className="gameMenuModalHeader">
-              <h2> { currentMenuPage } </h2>
+          <GameMenuContext.Provider value = { context }>
+            <div className="gameMenuModalContent">
+              <div className="gameMenuModalHeader">
+                <h2> { currentMenuPage } </h2>
+              </div>
+              <div className="gameMenuModalBody">
+                { Array.isArray( children ) ? children[ pageNames.indexOf(currentMenuPage)] : children }
+              </div>
+              <div className="gameMenuModalFooter">
+                { previousMenuPages.length > 0 && <button type="button" onClick={() => context.linkTo(undefined, true)}> Previous </button>}
+              </div>
             </div>
-            <div className="gameMenuModalBody">
-              { menuItems[currentMenuPage](context) }
-            </div>
-            <div className="gameMenuModalFooter">
-              { previousMenuPages.length > 0 && <button type="button" onClick={() => context.linkTo(undefined, true)}> Previous </button>}
-            </div>
-          </div>
+          </GameMenuContext.Provider>
         </CSSTransition>
       </TransitionGroup>
     </div>

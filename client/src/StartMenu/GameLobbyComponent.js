@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useContext } from "react";
 import { SocketContext } from "../SocketContext.js";
+import { GameMenuContext } from "../GameMenu";
 
-export function GameLobbyComponent({ linkTo, formData }) {
+export function GameLobbyComponent() {
   const { getGameLobbyHandler } = useContext( SocketContext );
   const gameLobbyHandler = getGameLobbyHandler();
+  const { linkTo, formData } = useContext( GameMenuContext );
+
   const [ lobbyState, setLobbyState ] = useState( gameLobbyHandler.getLobbyState() );
 
   useEffect(() => {

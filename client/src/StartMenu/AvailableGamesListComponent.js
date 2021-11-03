@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import { SocketContext } from "../SocketContext.js";
 import { SelectableTable } from "../SelectableTable.js";
+import { GameMenuContext } from "../GameMenu";
 
-export function AvailableGamesListComponent({ linkTo, formData }) {
-  const { getOpenGamesList, joinLobby } = useContext(SocketContext);
+export function AvailableGamesListComponent() {
+  const { getOpenGamesList, joinLobby } = useContext( SocketContext );
+  const { linkTo, formData } = useContext( GameMenuContext );
 
   const [data, setData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(-1);

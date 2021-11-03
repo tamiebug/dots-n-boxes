@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { ALLOWED_DIFFICULTIES } from "../GameStore";
 import { createSelect } from "./createSelect";
+import { GameMenuContext } from "../GameMenu";
 
 function AIDifficultySelectElement({ formData, setFormData, previousSettings }) {
   return createSelect(
@@ -10,7 +11,8 @@ function AIDifficultySelectElement({ formData, setFormData, previousSettings }) 
   );
 }
 
-export function AIDifficultyComponent({ linkTo, formData, setFormData, previousSettings }) {
+export function AIDifficultyComponent({ previousSettings }) {
+  const { linkTo, formData, setFormData } = useContext( GameMenuContext );
   function onSubmit(event) {
     event.preventDefault();
     linkTo("Choose Player Name");

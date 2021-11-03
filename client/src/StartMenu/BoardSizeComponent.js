@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { MAX_BOARD_SIZE, MIN_BOARD_SIZE } from "../GameStore";
 import { createSelect } from "./createSelect";
+import { GameMenuContext } from "../GameMenu";
 
 function BoardSizeSelectElement ({ formData, setFormData, previousSettings }) {
   return createSelect(
@@ -10,7 +11,12 @@ function BoardSizeSelectElement ({ formData, setFormData, previousSettings }) {
   );
 }
 
-export function BoardSizeComponent({ formData, setFormData, setGameSettingsAndKillMenu, previousSettings }) {
+export function BoardSizeComponent({ setGameSettingsAndKillMenu, previousSettings }) {
+  const { formData, setFormData } = useContext( GameMenuContext );
+
+  // TODO: Quick fix for bug, erase confusion between boardSize / boardHeight / boardWidth in the future
+  useEffect(() => setFormData({...formData, boardSize: formData.boardHeight || formData.boardWidth }), []);
+
   function onFormSubmit(event) {
     event.preventDefault();
     setGameSettingsAndKillMenu({
@@ -22,14 +28,16 @@ export function BoardSizeComponent({ formData, setFormData, setGameSettingsAndKi
     });
   }
 
-  return <form onSubmit={onFormSubmit}>
-    <fieldset>
-      <legend>Board Size</legend>
-      <label>
-        choose Board Size:
-        <BoardSizeSelectElement {... { formData, setFormData, previousSettings }} />
-      </label>
-      <input type="submit" value="go" />
-    </fieldset>
-  </form>;
+  return <>
+    <form onSubmit={onFormSubmit}>
+      <fieldset>
+        <legend>Board Size</legend>
+        <label>
+          choose Board Size:
+          <BoardSizeSelectElement {... { formData, setFormData, previousSettings }} />
+        </label>
+        <input type="submit" value="go" />
+      </fieldset>
+    </form>
+  </>;
 }

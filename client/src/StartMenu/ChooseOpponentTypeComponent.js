@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useContext } from "react";
+import { GameMenuContext } from "../GameMenu";
 
-export function ChooseOpponentTypeComponent({ linkTo, formData, setFormData }) {
+export function ChooseOpponentTypeComponent() {
+  const { linkTo, formData, setFormData } = useContext( GameMenuContext );
   function aiMatchOnClick(event) {
     event.preventDefault();
     setFormData({ ...formData, gameType: "CPU" });

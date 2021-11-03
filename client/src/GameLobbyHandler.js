@@ -57,6 +57,18 @@ GameLobbyHandler.prototype.callListener = function callListener() {
 
 GameLobbyHandler.prototype.setUpGame = function setUpGame({ settings }) {
   this.gameActive = true;
+  /* The following extra dispatch is a bugfix for bug introduced in commit 0CED8E2A
+    *
+    * For some reason, whenever this function's call stack originates from a callback in Socket.js, after this commit above
+    * the old version of the GameBoard coexists with the new version for the first update and first update only, causing
+    * errors, but only at setUpGame match initialization and at no other time.  By doing an extra setUpGame action, it seems
+    * to prevent the error.  I have absolutely no clue why this is the case; setUpgame just does the trick and is able
+    * to get React to properly handle this function being called by a callback registered to Socket.js, specifically after the
+    * changes in the above commit which don't even change any of the seemingly relevant code.
+    *
+    * In case that code changed in 0CED8E2A is further modified, it is worth going back here to see if this fix is stil needed.
+    * Applications are supposed to make sense, and this bug DOES have a yet-to-be-discovered reason for existing, whatever it may be.
+    */
   gameStore.dispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
   gameStore.dispatch({ type: 'setUpGame', settings: {
     gameType: 'online',

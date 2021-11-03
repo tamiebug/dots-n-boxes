@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useGameStore } from "../GameStore";
+import { GameMenuContext } from "../GameMenu";
 
-export function HomePageComponent({ linkTo, formData, setGameSettingsAndKillMenu }) {
+export function HomePageComponent({ setGameSettingsAndKillMenu }) {
   const [ gameState ] = useGameStore();
+  const { linkTo, formData } = useContext( GameMenuContext );
+
   function useSavedSettings(event) {
     event.preventDefault();
     setGameSettingsAndKillMenu({

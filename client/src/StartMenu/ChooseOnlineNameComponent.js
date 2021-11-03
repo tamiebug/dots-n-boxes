@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
 import { SocketContext } from "../SocketContext.js";
+import { GameMenuContext } from "../GameMenu";
 
-export function ChooseOnlineNameComponent({ linkTo, formData, setFormData }) {
-  const { reserveName } = useContext(SocketContext);
+export function ChooseOnlineNameComponent() {
+  const { reserveName } = useContext( SocketContext );
+  const { linkTo, formData, setFormData } = useContext( GameMenuContext );
 
   const [currentName, setCurrentName] = useState(formData.onlineName || "");
   const [nameValid, setNameValid] = useState(false);

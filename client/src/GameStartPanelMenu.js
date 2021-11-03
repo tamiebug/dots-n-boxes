@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { GameMenu } from './GameMenu.js';
 import { appStates, useGameStore } from "./GameStore.js";
@@ -16,16 +16,16 @@ import { AIDifficultyComponent } from "./StartMenu/AIDifficultyComponent";
 
 export function GameStartPanelMenu() {
   const [ gameState, gameStateDispatch ] = useGameStore();
-  const [ previousSettings, setPreviousSettings ] = useState( DEFAULT_GAME_SETTINGS );
+  const [ previousSettings, setPreviousSettings ] = useState( () => loadPreviousSettings() );
 
-  useEffect(() => {
+  function loadPreviousSettings() {
     let previousGameSettings = {};
     if ( gameState.appSettings.savePreviousMatchSettings ) {
       const previousGameSettingsString = window.localStorage.getItem('Previous Game Settings');
       previousGameSettings = JSON.parse(previousGameSettingsString);
     }
-    setPreviousSettings({ ...DEFAULT_GAME_SETTINGS, ...previousGameSettings });
-  }, [ ]);
+    return { ...DEFAULT_GAME_SETTINGS, ...previousGameSettings };
+  }
 
   function setGameSettingsAndKillMenu( settings ) {
     setPreviousSettings({ ...settings });
@@ -33,33 +33,18 @@ export function GameStartPanelMenu() {
       const stringifiedSettings = JSON.stringify(settings);
       window.localStorage.setItem('Previous Game Settings', stringifiedSettings);
     }
-    /* The Following is a bugfix for bug introduced in commit 0CED8E2A
-     *
-     * For some reason, whenever this function's call stack originates from a callback in Socket.js, after this commit above
-     * the old version of the GameBoard coexists with the new version for the first update and first update only, causing
-     * errors, but only at setUpGame match initialization and at no other time.  By doing an extra setUpGame action, it seems
-     * to prevent the error.  I have absolutely no clue why this is the case; setUpgame just does the trick and is able
-     * to get React to properly handle this function being called by a callback registered to Socket.js, specifically after the
-     * changes in the above commit which don't even change any of the seemingly relevant code.
-     *
-     * In case that code changed in 0CED8E2A is further modified, it is worth going back here to see if this fix is stil needed.
-     * Applications are supposed to make sense, and this bug DOES have a yet-to-be-discovered reason for existing, whatever it may be.
-     */
-    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
     gameStateDispatch({ type: 'setUpGame', settings });
   }
 
-  const menuItems = {
-    "Home Page": ({ linkTo, formData }) => <HomePageComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu }} />,
-    "Choose Opponent Type": ({ linkTo, formData, setFormData }) => <ChooseOpponentTypeComponent { ...{ linkTo, formData, setFormData }} />,
-    "Choose Online Name": ({ linkTo, formData, setFormData }) => <ChooseOnlineNameComponent { ...{ linkTo, formData, setFormData }} />,
-    "Available Games List": ({ linkTo, formData, setFormData }) => <AvailableGamesListComponent { ...{ linkTo, formData, setFormData }} />,
-    "Board Size": ({ formData, setFormData }) => <BoardSizeComponent { ...{ formData, setFormData, setGameSettingsAndKillMenu, previousSettings }} />,
-    "Host Game Lobby": ({ linkTo, formData, setFormData }) => <HostGameLobbyComponent {...{ previousSettings, linkTo, formData, setFormData }} />,
-    "Game Lobby": ({ linkTo, formData }) => <GameLobbyComponent { ...{ linkTo, formData }} />,
-    "Choose Player Name": ({ linkTo, formData, setFormData }) => <ChoosePlayerNameComponent { ...{ linkTo, formData, setFormData }} />,
-    "AI Difficulty": ({ linkTo, formData, setFormData }) => <AIDifficultyComponent { ...{ linkTo, formData, setFormData, previousSettings }} />,
-  };
-
-  return <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ previousSettings } menuItems={ menuItems } showMenu= { gameState.appState == appStates.PRE_MATCH } />;
+  return <GameMenu name="GameMenu" startingItemName="Home Page" defaultFormSettings={ previousSettings } showMenu={ gameState.appState == appStates.PRE_MATCH }>
+    <HomePageComponent name="Home Page" { ...{setGameSettingsAndKillMenu }}/>
+    <ChooseOpponentTypeComponent name="Choose Opponent Type"/>
+    <ChooseOnlineNameComponent name="Choose Online Name"/>
+    <AvailableGamesListComponent name="Available Games List"/>
+    <BoardSizeComponent name="Board Size" { ...{ setGameSettingsAndKillMenu, previousSettings }}/>
+    <HostGameLobbyComponent name="Host Game Lobby" { ...{ previousSettings }}/>
+    <GameLobbyComponent name="Game Lobby"/>
+    <ChoosePlayerNameComponent name="Choose Player Name"/>
+    <AIDifficultyComponent name="AI Difficulty" { ...{ previousSettings }}/>
+  </GameMenu>;
 }
