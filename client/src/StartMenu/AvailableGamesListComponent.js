@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { SocketContext } from "../SocketContext.js";
 import { SelectableTable } from "../SelectableTable.js";
 
-export function AvailableGamesListComponent({ linkTo, formData, setFormData }) {
+export function AvailableGamesListComponent({ linkTo, formData }) {
   const { getOpenGamesList, joinLobby } = useContext(SocketContext);
 
   const [data, setData] = useState([]);
@@ -24,11 +24,6 @@ export function AvailableGamesListComponent({ linkTo, formData, setFormData }) {
     return function cleanup() { clearInterval(fetchInterval); };
   }, []);
 
-  function gameSelectedCallback(hostName) {
-    setFormData({ ...formData, isHost: false, hostName });
-    linkTo("Game Lobby");
-  }
-
   const tabulatedData = data.map(entry => ({
     key: entry.gameId,
     cells: [
@@ -44,17 +39,17 @@ export function AvailableGamesListComponent({ linkTo, formData, setFormData }) {
     if (selectedRow == -1)
       return;
     const dataRow = data[selectedRow];
-    const requestResponseCallback = response => {
-      if (response.success == true) {
-        gameSelectedCallback(dataRow.hostName);
+    const requestResponseCallback = success => {
+      if ( success ) {
+        linkTo("Game Lobby");
       } else {
-        console.log(`game join request failure.  reason ${response.reason}`);
+        console.log(`game join request failure`);
         getOpenGamesList(gamesList => {
           setData([...gamesList]);
         });
       }
     };
-    joinLobby(dataRow.hostName, requestResponseCallback);
+    joinLobby( formData.onlineName, dataRow.hostName, requestResponseCallback );
   };
 
   return (

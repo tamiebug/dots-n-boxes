@@ -1,9 +1,6 @@
 import React, { createContext } from "react";
 
-import { socket, getOpenGamesList, reserveName, requestLobby, registerLobbyCallback,
-  registerOnlineMoveCallback, attemptOnlineMove, joinLobby, performLobbyCommand } from "./Socket";
-
-export { lobbyEvents, lobbyCommands } from "./Socket";
+import { socket, getOpenGamesList, reserveName, startLobby, attemptOnlineMove, joinLobby, getGameLobbyHandler } from "./Socket";
 
 export const SocketContext = createContext(null);
 
@@ -12,12 +9,10 @@ export function SocketProvider({ children }) {
     socket,
     getOpenGamesList,
     reserveName,
-    requestLobby,
-    registerLobbyCallback,
-    registerOnlineMoveCallback,
+    startLobby,
     attemptOnlineMove,
     joinLobby,
-    performLobbyCommand,
+    getGameLobbyHandler
   };
   return (
     <SocketContext.Provider value={ socketContextInterface }>

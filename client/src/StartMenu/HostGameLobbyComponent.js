@@ -4,7 +4,7 @@ import { SocketContext } from "../SocketContext.js";
 import { createSelect } from "./createSelect";
 
 export function HostGameLobbyComponent({ previousSettings, linkTo, formData, setFormData }) {
-  const { requestLobby } = useContext(SocketContext);
+  const { startLobby } = useContext(SocketContext);
   const [localFormData, setLocalFormData] = useState({ boardSize: previousSettings.boardWidth, gameLobbyDescription: "" });
 
   const boardSizeSelect = createSelect(
@@ -15,16 +15,16 @@ export function HostGameLobbyComponent({ previousSettings, linkTo, formData, set
 
   const onFormSubmit = e => {
     e.preventDefault();
-    const cb = response => {
-      if (response?.success === true) {
+    const cb = success => {
+      if ( success ) {
         console.log(`Hosting w/ name: ${formData.onlineName}, size: ${localFormData.boardSize} and description: ${localFormData.gameLobbyDescription}`);
         setFormData({ ...formData, isHost: true, ...localFormData });
         linkTo("Game Lobby");
       } else {
-        console.log(`Hosting failed because ${response.reason}`);
+        console.log(`Hosting failed`);
       }
     };
-    requestLobby({ ...localFormData }, cb);
+    startLobby( { ...localFormData }, formData.onlineName, cb );
   };
 
   return (

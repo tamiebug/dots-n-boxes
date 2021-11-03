@@ -1,4 +1,4 @@
-import { registerOnlineMoveCallback, attemptOnlineMove } from "./Socket";
+import { attemptOnlineMove } from "./Socket";
 import { appStates } from "./GameStore";
 import { printObjectToJSON } from "./utility";
 
@@ -16,7 +16,6 @@ const changeHandlers = new Map(Object.entries({
 export function GameEngine( store ) {
   this.store = store;
   store.subscribe( this.onStateBroadcast.bind( this ) );
-  registerOnlineMoveCallback( move => store.dispatch({ type: 'onlineMoveAttempt', move }) );
   loadAppSettingsFromBrowser( store.dispatch );
   applyDefaultGameSettings( store.dispatch );
   store.dispatch({ type: 'returnToStartMenu' });

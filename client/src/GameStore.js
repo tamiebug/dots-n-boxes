@@ -158,6 +158,7 @@ function gameStateReducer(state, action) {
   case 'setUpGame':
     validateAction( action, [{ key: 'settings', typeOf: 'object' }] );
     validateSettings( action.settings );
+    console.log("Setting up game...");
     return setUpGame( action.settings, state );
 
   case 'loadGame': {

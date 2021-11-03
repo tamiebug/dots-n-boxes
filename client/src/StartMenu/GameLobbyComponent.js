@@ -1,137 +1,68 @@
 import React, { useEffect, useState, useContext } from "react";
-import { SocketContext, lobbyEvents, lobbyCommands } from "../SocketContext.js";
+import { SocketContext } from "../SocketContext.js";
 
-export function GameLobbyComponent({ setGameSettingsAndKillMenu, linkTo, formData }) {
-  const { registerLobbyCallback, performLobbyCommand } = useContext(SocketContext);
-  const [ hostReady, setHostReady ] = useState(false);
-  const [ guestReady, setGuestReady ] = useState(false);
+export function GameLobbyComponent({ linkTo, formData }) {
+  const { getGameLobbyHandler } = useContext( SocketContext );
+  const gameLobbyHandler = getGameLobbyHandler();
+  const [ lobbyState, setLobbyState ] = useState( gameLobbyHandler.getLobbyState() );
 
-  const [{ hostName, guestName }, setPlayers] = useState(() => {
-    if (formData.isHost)
-      return { hostName: formData.onlineName, guestName: null };
-    else
-      return { hostName: formData.hostName, guestName: formData.onlineName };
-  });
+  useEffect(() => {
+    gameLobbyHandler.setChangeListener( newLobbyState => setLobbyState( newLobbyState ) );
+    return function cleanup() {
+      gameLobbyHandler.setChangeListener( null );
+    };
+  }, []);
 
-  const resetLobby = () => {
-    setPlayers({ hostName: null, guestName: null });
-    setHostReady(false);
-    setGuestReady(false);
-  };
+  useEffect(() => {
+    if ( !lobbyState.isValidLobby ) {
+      goBack();
+    }
+  }, [ lobbyState ]);
 
-  const goBack = () => {
-    if (formData.isHost) {
+  function goBack() {
+    if ( lobbyState.isHost ) {
       linkTo("Host Game Lobby");
     } else {
       linkTo("Available Games List");
     }
-  };
+    gameLobbyHandler.leaveLobby();
+  }
 
-  const lobbyEventCallback = event => {
-    switch (event.type) {
-    case lobbyEvents.HOST_LEFT:
-      resetLobby();
-      goBack();
-      break;
-    case lobbyEvents.HOST_READY:
-      setHostReady(true);
-      break;
-    case lobbyEvents.HOST_NOT_READY:
-      setHostReady(false);
-      break;
-    case lobbyEvents.GUEST_KICKED:
-      resetLobby();
-      alert("You have been kicked from lobby");
-      goBack();
-      break;
-    case lobbyEvents.GUEST_JOINED:
-      setPlayers({ hostName, guestName: event.playerName });
-      break;
-    case lobbyEvents.GUEST_LEFT:
-      setPlayers({ hostName, guestName: null });
-      break;
-    case lobbyEvents.GUEST_READY:
-      setGuestReady(true);
-      break;
-    case lobbyEvents.GUEST_NOT_READY:
-      setGuestReady(false);
-      break;
-    case lobbyEvents.START_GAME:
-      console.log("starting game");
-      setGameSettingsAndKillMenu({
-        boardHeight: event.settings.dimensions.boardHeight,
-        boardWidth: event.settings.dimensions.boardWidth,
-        playerNames: [hostName, guestName],
-        gameType: "online",
-        isHost: formData.isHost
-      });
-      break;
-    }
-  };
-
-  useEffect(() => {
-    registerLobbyCallback(lobbyEventCallback);
-  });
-
-  useEffect(() => {
-    return function cleanup() {
-      registerLobbyCallback(null);
-    };
-  }, []);
-
-  const dialogString = () => {
-    if (formData.isHost) {
-      if (guestName) {
-        if (hostReady) {
-          return `Waiting for guest ${guestName} to press the Ready button...`;
+  const generateDialogString = () => {
+    if ( lobbyState.isHost ) {
+      if ( lobbyState.playerNames.guest ) {
+        if ( lobbyState.readyStatus.host ) {
+          return `Waiting for guest ${ lobbyState.playerNames.guest } to press the Ready button...`;
         } else {
-          return `Press the 'Start Game' button to proceed with match against ${guestName}`;
+          return `Press the 'Start Game' button to proceed with match against ${ lobbyState.playerNames.guest }`;
         }
       } else {
         return `Waiting for a player to join Game Lobby...`;
       }
-    } else { // !formData.isHost
-      if (guestReady) {
-        return `Waiting for host ${hostName} to start game`;
+    } else { // lobbyState.isHost == false
+      if ( lobbyState.readyStatus.guest ) {
+        return `Waiting for host ${ lobbyState.playerNames.host } to start game`;
       } else {
         return `Press Ready to begin`;
       }
     }
   };
 
-  const startGameOnClick = () => {
-    if (!hostReady) {
-      performLobbyCommand(lobbyCommands.HOST_IS_READY);
-      setHostReady(true);
-    } else {
-      performLobbyCommand(lobbyCommands.HOST_IS_NOT_READY);
-      setHostReady(false);
-    }
-  };
-
-  const readyOnClick = () => {
-    if (!guestReady) {
-      performLobbyCommand(lobbyCommands.GUEST_IS_READY);
-      setGuestReady(true);
-    } else {
-      performLobbyCommand(lobbyCommands.GUEST_IS_NOT_READY);
-      setGuestReady(false);
-    }
-  };
-
   const leftButton = formData.isHost ?
-    <button onClick={() => performLobbyCommand(lobbyCommands.KICK_GUEST)}>Kick Player</button> :
-    <button onClick={() => performLobbyCommand(lobbyCommands.LEAVE_LOBBY)}>Leave Lobby</button>;
+    <button onClick={ () => gameLobbyHandler.kickGuest() }>Kick Player</button> :
+    <button onClick={ () => gameLobbyHandler.leaveLobby() }>Leave Lobby</button>;
 
-  const rightButton = formData.isHost ?
-    <button className={`${hostReady ? "ready" : ""}`} onClick={startGameOnClick}>Start Game</button> :
-    <button className={`${guestReady ? "ready" : ""}`} onClick={readyOnClick}>Ready</button>;
+  const isReady = lobbyState.readyStatus[ lobbyState.isHost ? 'host' : 'guest' ];
+  const rightButton =
+    <button className={ isReady ? "ready" : "" } onClick={ () => gameLobbyHandler.switchReadyStatus() } >
+      { lobbyState.isHost ? "Start Game" : "Ready" }
+    </button>;
 
   return (
     <div className="gameLobbyDiv">
-      <p> {dialogString()} </p>
+      <p> { generateDialogString() } </p>
       <div className="buttonsDiv">
-        {leftButton} {rightButton}
+        { leftButton } { rightButton }
       </div>
     </div>
   );

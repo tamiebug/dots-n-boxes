@@ -37,15 +37,15 @@ export function GameStartPanelMenu() {
      *
      * For some reason, whenever this function's call stack originates from a callback in Socket.js, after this commit above
      * the old version of the GameBoard coexists with the new version for the first update and first update only, causing
-     * errors, but only at setUpGame match initialization and at no other time.  By doing an extra setUpGame action, it seems 
+     * errors, but only at setUpGame match initialization and at no other time.  By doing an extra setUpGame action, it seems
      * to prevent the error.  I have absolutely no clue why this is the case; setUpgame just does the trick and is able
      * to get React to properly handle this function being called by a callback registered to Socket.js, specifically after the
      * changes in the above commit which don't even change any of the seemingly relevant code.
-     * 
+     *
      * In case that code changed in 0CED8E2A is further modified, it is worth going back here to see if this fix is stil needed.
      * Applications are supposed to make sense, and this bug DOES have a yet-to-be-discovered reason for existing, whatever it may be.
      */
-    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS }); 
+    gameStateDispatch({ type: 'setUpGame', settings: DEFAULT_GAME_SETTINGS });
     gameStateDispatch({ type: 'setUpGame', settings });
   }
 
@@ -56,7 +56,7 @@ export function GameStartPanelMenu() {
     "Available Games List": ({ linkTo, formData, setFormData }) => <AvailableGamesListComponent { ...{ linkTo, formData, setFormData }} />,
     "Board Size": ({ formData, setFormData }) => <BoardSizeComponent { ...{ formData, setFormData, setGameSettingsAndKillMenu, previousSettings }} />,
     "Host Game Lobby": ({ linkTo, formData, setFormData }) => <HostGameLobbyComponent {...{ previousSettings, linkTo, formData, setFormData }} />,
-    "Game Lobby": ({ linkTo, formData }) => <GameLobbyComponent { ...{ linkTo, formData, setGameSettingsAndKillMenu }} />,
+    "Game Lobby": ({ linkTo, formData }) => <GameLobbyComponent { ...{ linkTo, formData }} />,
     "Choose Player Name": ({ linkTo, formData, setFormData }) => <ChoosePlayerNameComponent { ...{ linkTo, formData, setFormData }} />,
     "AI Difficulty": ({ linkTo, formData, setFormData }) => <AIDifficultyComponent { ...{ linkTo, formData, setFormData, previousSettings }} />,
   };
