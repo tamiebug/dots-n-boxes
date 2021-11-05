@@ -14,6 +14,7 @@ export function GameLobbyHandler({ socket }) {
   };
   this.isHost = null;
   this.socket = socket;
+  this.socketOn = ( eventName, handler ) => { this.socket.on( eventName, data => { handler(data); this.callListener(); });};
   this.changeListener = null;
   this.gameActive = false;
   this.setUpSocketListeners();
@@ -82,36 +83,35 @@ GameLobbyHandler.prototype.setUpGame = function setUpGame({ settings }) {
 };
 
 GameLobbyHandler.prototype.setUpSocketListeners = function setUpSocketListeners() {
-  const socket = this.socket;
-  socket.onAny( () => this.callListener() );
-  socket.on(cApi.GuestJoined, data => {
+  const socketOn = this.socketOn;
+  socketOn(cApi.GuestJoined, data => {
     if ( data.playerName ) {
       this.playerNames = { ...this.playerNames, guest: data.playerName };
       this.readyStatus = { ...this.readyStatus, guest: false };
     } else throw new Error(`Received PLAYER_JOINED update with no data.playerName`);
   });
-  socket.on(cApi.GuestLeft, () => {
+  socketOn(cApi.GuestLeft, () => {
     this.playerNames = { ...this.playerNames, guest: null };
     this.readyStatus = { ...this.readyStatus, guest: null };
   });
-  socket.on(cApi.GuestReady, () => this.readyStatus = { ...this.readyStatus, guest: true });
-  socket.on(cApi.GuestNotReady, () =>  this.readyStatus = { ...this.readyStatus, guest: false });
-  socket.on(cApi.HostLeft, () => {
+  socketOn(cApi.GuestReady, () => this.readyStatus = { ...this.readyStatus, guest: true });
+  socketOn(cApi.GuestNotReady, () =>  this.readyStatus = { ...this.readyStatus, guest: false });
+  socketOn(cApi.HostLeft, () => {
     this.playerNames = { ...this.playerNames, host: null };
     this.readyStatus = { ...this.readyStatus, host: null };
     this.isHost = null;
   });
-  socket.on(cApi.HostKicked, () => {
+  socketOn(cApi.HostKicked, () => {
     this.playerNames = { guest: null, host: null };
     this.readyStatus = { guest: null, host: null };
     this.isHost = null;
   });
-  socket.on(cApi.HostReady, () =>  this.readyStatus = { ...this.readyStatus, host: true });
-  socket.on(cApi.HostNotReady, () => this.readyStatus = { ...this.readyStatus, host: false });
-  socket.on(cApi.StartGame, ({ settings }) => {
+  socketOn(cApi.HostReady, () =>  this.readyStatus = { ...this.readyStatus, host: true });
+  socketOn(cApi.HostNotReady, () => this.readyStatus = { ...this.readyStatus, host: false });
+  socketOn(cApi.StartGame, ({ settings }) => {
     this.setUpGame({ settings });
   });
-  socket.on(cApi.MoveAttempted, ({ move }) => {
+  socketOn(cApi.MoveAttempted, ({ move }) => {
     if ( this.gameActive ) gameStore.dispatch({ type: 'onlineMoveAttempt', move: Move.fromJSON(move) });
   });
 };
@@ -138,9 +138,18 @@ GameLobbyHandler.prototype.kickGuest = function kickGuest() {
 };
 
 GameLobbyHandler.prototype.leaveLobby = function leaveLobby() {
-  this.socket.emit( sApi.LeaveLobby );
-  this.playerNames = { guest: null, host: null };
-  this.readyStatus = { guest: null, host: null };
-  this.isHost = null;
-  this.callListener();
+  if ( this.playerNames.host !== null ) {
+    this.socket.emit( sApi.LeaveLobby );
+    this.playerNames = { guest: null, host: null };
+    this.readyStatus = { guest: null, host: null };
+    this.isHost = null;
+    this.callListener();
+  }
+};
+
+GameLobbyHandler.prototype.leaveLobbyFromMenu = function leaveLobbyFromMenu() {
+  if ( !this.gameActive ) {
+    // This is so that starting the game doesn't remove you from the lobby, only going back or closing the menu
+    this.leaveLobby();
+  }
 };

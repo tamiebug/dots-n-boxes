@@ -13,6 +13,7 @@ export function GameLobbyComponent() {
     gameLobbyHandler.setChangeListener( newLobbyState => setLobbyState( newLobbyState ) );
     return function cleanup() {
       gameLobbyHandler.setChangeListener( null );
+      gameLobbyHandler.leaveLobbyFromMenu();
     };
   }, []);
 
@@ -28,7 +29,7 @@ export function GameLobbyComponent() {
     } else {
       linkTo("Available Games List");
     }
-    gameLobbyHandler.leaveLobby();
+    gameLobbyHandler.leaveLobbyFromMenu();
   }
 
   const generateDialogString = () => {
@@ -53,7 +54,7 @@ export function GameLobbyComponent() {
 
   const leftButton = formData.isHost ?
     <button onClick={ () => gameLobbyHandler.kickGuest() }>Kick Player</button> :
-    <button onClick={ () => gameLobbyHandler.leaveLobby() }>Leave Lobby</button>;
+    <button onClick={ () => gameLobbyHandler.leaveLobbyFromMenu() }>Leave Lobby</button>;
 
   const isReady = lobbyState.readyStatus[ lobbyState.isHost ? 'host' : 'guest' ];
   const rightButton =
