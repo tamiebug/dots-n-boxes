@@ -145,6 +145,8 @@ function handlePlayerStatusChange({ socket, data, callback, io }) {
 
   if (game.players.host.ready && game.players.guest?.ready) {
     log.info(`Starting game between ${ds.getUserNameFromSocketId(game.players.host.socketId)} and ${ds.getUserNameFromSocketId(game.players.guest.socketId)} with gameId ${gameId}`);
+    game.players.host.ready = false;
+    game.players.guest.ready = false;
     io.to( hostSocketId ).emit(cApi.StartGame, { settings: { dimensions: game.dimensions }});
     io.to( guestSocketId ).emit(cApi.StartGame, { settings: { dimensions: game.dimensions }});
     callback({ success: true });
