@@ -24,11 +24,7 @@ export function GameLobbyComponent() {
   }, [ lobbyState ]);
 
   function goBack() {
-    if ( lobbyState.isHost ) {
-      linkTo("Host Game Lobby");
-    } else {
-      linkTo("Available Games List");
-    }
+    linkTo(undefined, true); // linkTo has an optional second argument, if true it simply sends you back one page
     gameLobbyHandler.leaveLobbyFromMenu();
   }
 
